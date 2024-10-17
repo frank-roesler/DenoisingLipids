@@ -6,7 +6,7 @@ from numpy.fft import ifft, fftshift
 import scipy.io
 from glob import glob
 import scipy.io
-from numba import njit
+# from numba import njit
 
 def build_ppmAx(bw, noSmp):
     gamma = 42.577  # [MHz/T]

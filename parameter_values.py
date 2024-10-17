@@ -1,6 +1,6 @@
-mmbg_path  = 'basisSets/MMBG/MMBG_050_woCrCH2.mat'  # path to the macromolecular model (from FiTAID, voigt lines), usually not required for TE > 60ms
-lip_path   = '03_SLOW/lipidModel/'                  # path to the lipid model (voigt line model from svd)
-metab_path = '03_SLOW/basisSetsRs/'                 # path to MARSS basis sets (no pre line broadening)
+mmbg_path  = 'data.nosync/basisSets/MMBG/MMBG_050_woCrCH2.mat'  # path to the macromolecular model (from FiTAID, voigt lines), usually not required for TE > 60ms
+lip_path   = 'data.nosync/lipidModel/'                  # path to the lipid model (voigt line model from svd)
+metab_path = 'data.nosync/basisSetsRs/'                 # path to MARSS basis sets (no pre line broadening)
 
 noSmp       = 406         # [pts] number of sampling points (SLOW: 406)
 bw          = 2500        # [Hz] sampling frequency of the ADCs (STEAM: 8000; sLASER: 5000; SLOW: 2500)
