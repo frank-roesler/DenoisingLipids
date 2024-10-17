@@ -66,10 +66,9 @@ class Metab_basis:
         self.maxMetabCon = (metab_con_s[list(metab_con_s)[-1]])[0]
 
         self.kwargs      = kwargs_BS
-        self.metab_paths = sorted(glob(path+'/*.mat'), key = lambda s: s.casefold())
-        metab_names = [metab_path.split('/')[-1] for metab_path in self.metab_paths]   # find all *.mat files
-        metab_names = sorted([name.split('.')[0] for name in metab_names], key = lambda s: s.casefold())
-        self.metab_names    = metab_names
+        self.metab_paths = sorted(path.glob('*.mat'), key = lambda s: s.as_posix().casefold())
+        metab_names = sorted([metab_path.stem for metab_path in self.metab_paths], key = lambda s: s.casefold())  # find all *.mat files
+        self.metab_names = metab_names
         self.naked_patterns, self.metab_sd = self.make_patterns(normalize=normalize_basis_sets, metabCon = metab_con)
 
     def make_patterns(self, normalize=False, metabCon = None):
@@ -101,7 +100,7 @@ class Metab_basis:
 class Lip_basis:    # class to load the lipid model from multiple matlab files (so that we do not have to access the files in every training loop)
     def __init__(self, path, kwargs_Lip):
         self.kwargs    = kwargs_Lip
-        self.lip_path  = sorted(glob(path+'/*.mat'), key = lambda s: s.casefold())
+        self.lip_path  = sorted(path.glob('*.mat'), key = lambda s: s.as_posix().casefold())
         self.lipModel = self.load_para()
     
     def load_para(self):

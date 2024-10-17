@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from time import time
 
 includeMMBG         = False
-includeLip          = False
+includeLip          = True
 LoadPretrainedModel = False
 Monotonicity        = False
 NormalizeBasisSets  = False  # normalizes all basis sets so that highest peak is 1. LEAVE THIS AT FALSE!!!
@@ -75,7 +75,7 @@ while epoch <= epochs+1:
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
                                                                            **kwargs_BS)
         
-        noise_batch        = noise_batch.to(device)
+        noise_batch = noise_batch.to(device)
 
         if trainLs:
             noisy_signal_batch = noisy_signal_batch - lip_batch
@@ -92,13 +92,13 @@ while epoch <= epochs+1:
         # low = 1500
         # high = 2500
         # for b in range(n_bvals):
-        #     ax[0].plot(ppmAx[low:high], S[low:high, b], linewidth=0.5, color=cmap(b))
-        #     ax[1].plot(ppmAx[low:high], N[low:high, b], linewidth=0.5, color=cmap(b))
+        #     ax[0].plot(S[:, b], linewidth=0.5, color=cmap(b))
+        #     ax[1].plot(N[:, b], linewidth=0.5, color=cmap(b))
+        # ax[0].set_xlim(len(S), 0)  # ppm axis
+        # ax[1].set_xlim(len(N), 0)  # ppm axis
         # plt.show(block=False)
         # plt.pause(1)
-        # ax[0].set_xlim(ppmRange[1] + 0.5, ppmRange[0] - 0.5)  # ppm axis
-        # ax[1].set_xlim(ppmRange[1] + 0.5, ppmRange[0] - 0.5)  # ppm axis
-        # fig.savefig('without{}{}'.format(epoch,n_bvals), dpi=256)
+        # fig.savefig('lipids{}{}'.format(epoch,n_bvals), dpi=256)
 
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
