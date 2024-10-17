@@ -46,7 +46,7 @@ def metabFunc_vec(para, tAx, y_metab):
     n_nonzero = np.random.randint(1, n_metabs+1)
     nonzero_amplitudes = np.random.choice(np.arange(n_metabs), n_nonzero)
     amplitudes[nonzero_amplitudes] = np.random.rand(n_nonzero)
-    amplitudes=np.ones(n_metabs);
+    amplitudes=np.ones(n_metabs)
 
     constL     = np.pi
     constG     = 2 * np.pi / np.sqrt(16 * np.log(2))
@@ -67,7 +67,7 @@ class Metab_basis:
 
         self.kwargs      = kwargs_BS
         self.metab_paths = sorted(glob(path+'/*.mat'), key = lambda s: s.casefold())
-        metab_names = [metab_path.split('\\')[-1] for metab_path in self.metab_paths]   # find all *.mat files
+        metab_names = [metab_path.split('/')[-1] for metab_path in self.metab_paths]   # find all *.mat files
         metab_names = sorted([name.split('.')[0] for name in metab_names], key = lambda s: s.casefold())
         self.metab_names    = metab_names
         self.naked_patterns, self.metab_sd = self.make_patterns(normalize=normalize_basis_sets, metabCon = metab_con)

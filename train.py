@@ -27,7 +27,7 @@ bvals = range(32,32+1)
 #bvals = range(7,7+1)
 
 ppmAx, fAx, wCenter, fL = build_ppmAx(bw, noSmp)
-device = torch.device('mps' if torch.mps.is_available() else 'cpu')
+device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 epochs     = 100000
 lr         = 6e-5
 batch_size = 32    # will be multiplied by n_bvals
