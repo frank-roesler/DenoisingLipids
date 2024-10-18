@@ -43,7 +43,7 @@ optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
 timer  = 0       # Number of steps before model can be saved again
 epoch  = 0
 losses = []
-best_loss = 1e-2 # Threshold for saving the model
+best_loss = torch.Tensor([1e-2]).to(device) # Threshold for saving the model
 if LoadPretrainedModel:
     print_training_data(modelname)
     losses, epoch, current_loss, best_loss, batch_size = load_model(modelname, model, optimizer, device)
@@ -60,6 +60,10 @@ print('training...')
 model.train()
 # fig, ax = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
 while epoch <= epochs+1:
+
+    print('start while ', time() - t0)
+    t0 = time()
+
     if timer>2000:
         # If best_loss hasn't been beaten in the last 1000 steps, increase batch size.
         if batch_size==128:
@@ -75,6 +79,9 @@ while epoch <= epochs+1:
                                                                            include_lip  = includeLip,
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
                                                                            **kwargs_BS)
+        print('end make_batch ', time()-t0)
+        t0 = time()
+
         noise_batch        = noise_batch.to(device)
         noisy_signal_batch = noisy_signal_batch.to(device)
         lip_batch          = lip_batch.to(device)
@@ -99,12 +106,36 @@ while epoch <= epochs+1:
         # plt.pause(1)
         # fig.savefig('lipids{}{}'.format(epoch,n_bvals), dpi=256)
 
+    print('end compute loss ', time()-t0)
+    t0 = time()
+
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)
+
+    print('end backward ', time()-t0)
+    t0 = time()
+
+    # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)
     optimizer.step()
-    losses.append(float(loss))
+
+    print('end optimizer ', time()-t0)
+    t0 = time()
+
+    loss_fl = loss
+
+    print('end float(loss) ', time()-t0)
+    t0 = time()
+
+    losses.append(loss_fl)
+
+    print('end losses.append() ', time()-t0)
+    t0 = time()
+
     del loss
+
+    print('end del loss ', time()-t0)
+    t0 = time()
+
     if epoch%100==0 and epoch>0:
         print_info(losses,optimizer,epoch,epochs,model)
         print('batch size: ', noise_batch.shape[0]*len(bvals))
@@ -113,29 +144,47 @@ while epoch <= epochs+1:
         t0 = time()
         plot_losses(losses, mode='log')
 
-    current_loss = np.mean(losses[-500:])
-    if current_loss<best_loss and timer>100:
-        timer = 0
-        best_loss = current_loss
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'losses': losses,
-            'best_loss': best_loss,
-            'batch_size': batch_size,
-            'learning_rate': lr,
-            'includeMMBG': includeMMBG,
-            'Monotonicity': Monotonicity,
-            'NormalizeBasisSets': NormalizeBasisSets,
-            'ReduceSmallMMs': ReduceSmallMMs,
-            'metab_path': metab_path,
-            'mmbg_path': mmbg_path,
-            'bandwidth': bw,
-            'kwargs_BS': kwargs_BS,
-            'kwargs_MM': kwargs_MM
-        }, modeldir+model.name)
-        print('new best loss: ', "{:.3e}".format(best_loss))
+    current_loss = torch.mean(torch.stack(losses[-500:]))
+
+    print('end current_loss ', time()-t0)
+    t0 = time()
+
+    optimal = current_loss < best_loss
+
+    print('end optimal ', time()-t0)
+    print(optimal)
+    t0 = time()
+
+    # if timer>100:
+    #     if optimal:
+    #         timer = 0
+    #         best_loss = current_loss
+    #         torch.save({
+    #             'epoch': epoch,
+    #             'model_state_dict': model.state_dict(),
+    #             'optimizer_state_dict': optimizer.state_dict(),
+    #             'losses': losses,
+    #             'best_loss': best_loss,
+    #             'batch_size': batch_size,
+    #             'learning_rate': lr,
+    #             'includeMMBG': includeMMBG,
+    #             'Monotonicity': Monotonicity,
+    #             'NormalizeBasisSets': NormalizeBasisSets,
+    #             'ReduceSmallMMs': ReduceSmallMMs,
+    #             'metab_path': metab_path,
+    #             'mmbg_path': mmbg_path,
+    #             'bandwidth': bw,
+    #             'kwargs_BS': kwargs_BS,
+    #             'kwargs_MM': kwargs_MM
+    #         }, modeldir+model.name)
+    #     print('new best loss: ', "{:.3e}".format(best_loss))
+
     timer += 1
     epoch += 1
+
+    print('end for step ', time()-t0)
+    t0 = time()
+    print('-'*100)
+
+
 plt.show()
