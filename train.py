@@ -86,7 +86,14 @@ while epoch <= epochs+1:
         noisy_signal_batch = noisy_signal_batch.to(device)
         lip_batch          = lip_batch.to(device)
 
+        print('end to(device) ', time()-t0)
+        t0 = time()
+
         pred   = model(noisy_signal_batch)
+
+        print('end model(batch) ', time()-t0)
+        t0 = time()
+
         target = lip_batch + noise_batch
         loss += loss_fn(pred, target)/len(bvals)
 
@@ -118,20 +125,18 @@ while epoch <= epochs+1:
     # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)
     optimizer.step()
 
-    print('end optimizer ', time()-t0)
-    t0 = time()
-
-    loss_fl = loss
-
     print('end float(loss) ', time()-t0)
     t0 = time()
 
-    losses.append(loss_fl)
+    losses.append(loss)
 
     print('end losses.append() ', time()-t0)
     t0 = time()
 
     del loss
+    del noise_batch
+    del noisy_signal_batch
+    del lip_batch
 
     print('end del loss ', time()-t0)
     t0 = time()
@@ -152,7 +157,6 @@ while epoch <= epochs+1:
     optimal = current_loss < best_loss
 
     print('end optimal ', time()-t0)
-    print(optimal)
     t0 = time()
 
     # if timer>100:
@@ -180,9 +184,13 @@ while epoch <= epochs+1:
     #     print('new best loss: ', "{:.3e}".format(best_loss))
 
     timer += 1
+
+    print('end timer+1 ', time()-t0)
+    t0 = time()
+
     epoch += 1
 
-    print('end for step ', time()-t0)
+    print('end epoch+1 ', time()-t0)
     t0 = time()
     print('-'*100)
 
