@@ -10,7 +10,9 @@ trainLs             = True  # train the network for lipid suppresion (otherwise 
 epochs          = 100000
 lr              = 6e-5
 batch_size      = 32    # will be multiplied by n_bvals
-plot_loss_every = 10
+plot_loss_every = 100    # plot and print info every n epochs
 
 modeldir  = 'trained_models/' # save model as
 modelname = modeldir + 'DiffusionNet_compr_15x3_16x3_32' # load this model
+
+bvals = range(32,32+1)

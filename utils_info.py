@@ -46,7 +46,7 @@ class InfoScreen:
         self.init_plots()
 
     def init_plots(self):
-        self.fig, self.ax = plt.subplots(1,1, figsize = (11,5), constrained_layout=True)
+        self.fig, self.ax = plt.subplots(1,1, figsize = (8,6), constrained_layout=True)
         self.p1 = self.ax.semilogy([0],[1], label='training loss', linewidth=0.5)[0]
         self.s1 = self.ax.semilogy([0],[1], label='running mean')[0]
         self.ax.legend()
@@ -64,7 +64,7 @@ class InfoScreen:
         print('.........', 'Number of model parameters: ', n_params)
         for param_group in optimizer.param_groups:
             print('.........', 'Learning rate:', param_group['lr'])
-        print('batch size: ', batch_size)
+        print('.........', 'batch size: ', batch_size)
         print('.........', f'Time: {self.t1:.1f}')
 
     def plot_losses(self, epoch, train_losses, window=100):
@@ -72,10 +72,12 @@ class InfoScreen:
         if epoch>0 and epoch%self.output_every==0:
             self.ax.set_xlim(1,epoch+1)
             self.ax.set_ylim((0.9*np.min(train_losses), 1.1*np.max(train_losses)))
-            self.p1.set_xdata(range(1, epoch + 1))
+            self.p1.set_xdata(range(epoch + 1))
             self.p1.set_ydata(train_losses)
             if epoch>2*window+1:
-                self.s1.set_xdata(range(window, epoch + 1 - window))
+                x = np.arange(window-1, epoch + 1 - window)
+                y = np.convolve(train_losses, np.ones(2 * window) / (2 * window), mode='valid')
+                self.s1.set_xdata(range(window-1, epoch + 1 - window))
                 self.s1.set_ydata(np.convolve(train_losses, np.ones(2 * window) / (2 * window), mode='valid'))
             self.fig.canvas.draw()
             plt.show(block=False)
