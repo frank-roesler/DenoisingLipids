@@ -2,27 +2,14 @@ import torch.optim as optim
 import torch
 import numpy as np
 from utils_info import plot_losses, print_info, print_training_data, load_model
-from utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
+from utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx, InfoScreen
+from utils_io import Checkpoint
 from nets import DiffusionNet,UNet,DiffusionNet_compr
 from parameter_values import *
+from config_train import *
 import matplotlib.pyplot as plt
 from time import time
-
-includeMMBG         = False
-includeLip          = False
-LoadPretrainedModel = False
-Monotonicity        = False
-NormalizeBasisSets  = False  # normalizes all basis sets so that highest peak is 1. LEAVE THIS AT FALSE!!!
-ReduceSmallMMs      = False  # Removes MMs with small amplitude to speed up training
-
-epochs     = 100000
-lr         = 6e-5
-batch_size = 32    # will be multiplied by n_bvals
-
-trainLs = True  # train the network for lipid suppresion (otherwise it's just denoising)
-
-modeldir  = 'trained_models/' # save model as
-modelname = modeldir + 'DiffusionNet_compr_15x3_16x3_32' # load this model
+import os
 
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None
@@ -46,7 +33,7 @@ optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
 timer  = 0       # Number of steps before model can be saved again
 epoch  = 0
 losses = []
-best_loss = torch.Tensor([1e-2]).to(device) # Threshold for saving the model
+best_loss = torch.Tensor([1e-2], device=device) # Threshold for saving the model
 if LoadPretrainedModel:
     print_training_data(modelname)
     losses, epoch, current_loss, best_loss, batch_size = load_model(modelname, model, optimizer, device)
@@ -58,13 +45,13 @@ if LoadPretrainedModel:
 # model.load_state_dict(checkpoint['model_state_dict'])
 # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-t0 = time()
 print('training...')
+info_screen = InfoScreen(output_every=plot_loss_every)
+checkpoint  = Checkpoint()
 model.train()
 # fig, ax = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
 while epoch <= epochs+1:
-    if timer>2000:
-        # If best_loss hasn't been beaten in the last 1000 steps, increase batch size.
+    if timer>2000: # If best_loss hasn't been beaten in the last 1000 steps, increase batch size.
         if batch_size==128:
             break
         batch_size *= 2
@@ -84,7 +71,7 @@ while epoch <= epochs+1:
 
         pred   = model(noisy_signal_batch)
         target = lip_batch + noise_batch
-        loss += loss_fn(pred, target)/len(bvals)
+        loss  += loss_fn(pred, target)/len(bvals)
 
         # cmap = plt.get_cmap('winter', n_bvals)
         # S = noisy_signal_batch[0][0].detach().cpu()
@@ -106,44 +93,19 @@ while epoch <= epochs+1:
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)
     optimizer.step()
-    losses.append(loss.cpu().detach().data[0])
-    del loss
-    if epoch%100==0 and epoch>0:
-        print_info(losses,optimizer,epoch,epochs,model)
-        print('batch size: ', noise_batch.shape[0]*len(bvals))
-        print('Time: ', time() - t0)
-        print('-' * 50)
-        t0 = time()
-        plot_losses(losses, mode='log')
 
+    losses.append(loss.cpu().detach().data[0])
+    if epoch%100==0 and epoch>0:
+        info_screen.print_info(losses, optimizer, epoch, epochs, model, noise_batch.shape[0]*len(bvals))
+        info_screen.plot_losses(epoch, losses)
+
+    del loss
     del noise_batch
     del noisy_signal_batch
     del lip_batch
 
     current_loss = np.mean(losses[-500:])
-    if timer>100:
-        if current_loss < best_loss:
-            timer = 0
-            best_loss = current_loss
-            torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'losses': losses,
-                'best_loss': best_loss,
-                'batch_size': batch_size,
-                'learning_rate': lr,
-                'includeMMBG': includeMMBG,
-                'Monotonicity': Monotonicity,
-                'NormalizeBasisSets': NormalizeBasisSets,
-                'ReduceSmallMMs': ReduceSmallMMs,
-                'metab_path': metab_path,
-                'mmbg_path': mmbg_path,
-                'bandwidth': bw,
-                'kwargs_BS': kwargs_BS,
-                'kwargs_MM': kwargs_MM
-            }, modeldir+model.name)
-        print('new best loss: ', "{:.3e}".format(best_loss))
+    timer = checkpoint.save(timer, current_loss, epoch, model, optimizer, losses, best_loss)
     timer += 1
     epoch += 1
 
