@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from time import time
 
 includeMMBG         = False
-includeLip          = True
+includeLip          = False
 LoadPretrainedModel = False
 Monotonicity        = False
 NormalizeBasisSets  = False  # normalizes all basis sets so that highest peak is 1. LEAVE THIS AT FALSE!!!
@@ -17,7 +17,7 @@ ReduceSmallMMs      = False  # Removes MMs with small amplitude to speed up trai
 
 epochs     = 100000
 lr         = 6e-5
-batch_size = 32    # will be multiplied by n_bvals
+batch_size = 16    # will be multiplied by n_bvals
 
 trainLs = True  # train the network for lipid suppresion (otherwise it's just denoising)
 
@@ -79,11 +79,20 @@ while epoch <= epochs+1:
                                                                            include_lip  = includeLip,
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
                                                                            **kwargs_BS)
+
         print('end make_batch ', time()-t0)
         t0 = time()
 
-        noise_batch        = noise_batch.to(device)
         noisy_signal_batch = noisy_signal_batch.to(device)
+
+        print('end to(device) ', time()-t0)
+        t0 = time()
+
+        noise_batch        = noise_batch.to(device)
+
+        print('end to(device) ', time()-t0)
+        t0 = time()
+
         lip_batch          = lip_batch.to(device)
 
         print('end to(device) ', time()-t0)
@@ -134,9 +143,6 @@ while epoch <= epochs+1:
     t0 = time()
 
     del loss
-    del noise_batch
-    del noisy_signal_batch
-    del lip_batch
 
     print('end del loss ', time()-t0)
     t0 = time()
@@ -149,6 +155,10 @@ while epoch <= epochs+1:
         t0 = time()
         plot_losses(losses, mode='log')
 
+    del noise_batch
+    del noisy_signal_batch
+    del lip_batch
+
     current_loss = torch.mean(torch.stack(losses[-500:]))
 
     print('end current_loss ', time()-t0)
@@ -159,29 +169,29 @@ while epoch <= epochs+1:
     print('end optimal ', time()-t0)
     t0 = time()
 
-    # if timer>100:
-    #     if optimal:
-    #         timer = 0
-    #         best_loss = current_loss
-    #         torch.save({
-    #             'epoch': epoch,
-    #             'model_state_dict': model.state_dict(),
-    #             'optimizer_state_dict': optimizer.state_dict(),
-    #             'losses': losses,
-    #             'best_loss': best_loss,
-    #             'batch_size': batch_size,
-    #             'learning_rate': lr,
-    #             'includeMMBG': includeMMBG,
-    #             'Monotonicity': Monotonicity,
-    #             'NormalizeBasisSets': NormalizeBasisSets,
-    #             'ReduceSmallMMs': ReduceSmallMMs,
-    #             'metab_path': metab_path,
-    #             'mmbg_path': mmbg_path,
-    #             'bandwidth': bw,
-    #             'kwargs_BS': kwargs_BS,
-    #             'kwargs_MM': kwargs_MM
-    #         }, modeldir+model.name)
-    #     print('new best loss: ', "{:.3e}".format(best_loss))
+    if timer>100:
+        if optimal:
+            timer = 0
+            best_loss = current_loss
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'losses': losses,
+                'best_loss': best_loss,
+                'batch_size': batch_size,
+                'learning_rate': lr,
+                'includeMMBG': includeMMBG,
+                'Monotonicity': Monotonicity,
+                'NormalizeBasisSets': NormalizeBasisSets,
+                'ReduceSmallMMs': ReduceSmallMMs,
+                'metab_path': metab_path,
+                'mmbg_path': mmbg_path,
+                'bandwidth': bw,
+                'kwargs_BS': kwargs_BS,
+                'kwargs_MM': kwargs_MM
+            }, modeldir+model.name)
+        print('new best loss: ', "{:.3e}".format(best_loss))
 
     timer += 1
 
