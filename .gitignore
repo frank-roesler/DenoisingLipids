@@ -1,8 +1,9 @@
-traines_models/
+trained_models/
 data/
 data.nosync/
-traines_models.nosync/
+trained_models.nosync/
 .DS_Store
 .idea
 *.png
 *.jpg
+__pycache__/*

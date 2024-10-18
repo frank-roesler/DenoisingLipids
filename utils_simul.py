@@ -263,7 +263,7 @@ def make_batch_diffusion(batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis
         lip_batch    = torch.stack([c for (s,g,c) in batch])
         lipOut = lip_batch.detach()
     else:
-        lipOut = 0
+        lipOut = torch.Tensor([0])
 
     # TODO: we have to return the pure lipid signals as well for training lipid removal
     return signal_batch.detach(), noise_batch.detach(), lipOut
