@@ -4,3 +4,5 @@ data.nosync/
 traines_models.nosync/
 .DS_Store
 .idea
+*.png
+*.jpg
