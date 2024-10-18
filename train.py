@@ -17,12 +17,12 @@ ReduceSmallMMs      = False  # Removes MMs with small amplitude to speed up trai
 
 epochs     = 100000
 lr         = 6e-5
-batch_size = 16    # will be multiplied by n_bvals
+batch_size = 32    # will be multiplied by n_bvals
 
 trainLs = True  # train the network for lipid suppresion (otherwise it's just denoising)
 
-modelname = '03_SLOW/model/DiffusionNet_compr_33x7_34x7_32' # load this model
-modeldir  = '03_SLOW/model/' # save model as
+modeldir  = 'trained_models/' # save model as
+modelname = modeldir + 'DiffusionNet_compr_15x3_16x3_32' # load this model
 
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None
@@ -36,7 +36,10 @@ print('device: ', device)
 
 # model = DiffusionNet(ks=(35,3), nc=64).to(device)
 # model = UNet(n_classes=2,n_channels=2).to(device)
-model = DiffusionNet_compr(ks1=(15,32), ks2=(16,32), nc=32).to(device)
+model = DiffusionNet_compr(ks1=(15,3), ks2=(16,3), nc=32).to(device)
+
+print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+
 loss_fn = torch.nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
 
@@ -60,10 +63,6 @@ print('training...')
 model.train()
 # fig, ax = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
 while epoch <= epochs+1:
-
-    print('start while ', time() - t0)
-    t0 = time()
-
     if timer>2000:
         # If best_loss hasn't been beaten in the last 1000 steps, increase batch size.
         if batch_size==128:
@@ -79,30 +78,11 @@ while epoch <= epochs+1:
                                                                            include_lip  = includeLip,
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
                                                                            **kwargs_BS)
-
-        print('end make_batch ', time()-t0)
-        t0 = time()
-
         noisy_signal_batch = noisy_signal_batch.to(device)
-
-        print('end to(device) ', time()-t0)
-        t0 = time()
-
         noise_batch        = noise_batch.to(device)
-
-        print('end to(device) ', time()-t0)
-        t0 = time()
-
         lip_batch          = lip_batch.to(device)
 
-        print('end to(device) ', time()-t0)
-        t0 = time()
-
         pred   = model(noisy_signal_batch)
-
-        print('end model(batch) ', time()-t0)
-        t0 = time()
-
         target = lip_batch + noise_batch
         loss += loss_fn(pred, target)/len(bvals)
 
@@ -122,31 +102,12 @@ while epoch <= epochs+1:
         # plt.pause(1)
         # fig.savefig('lipids{}{}'.format(epoch,n_bvals), dpi=256)
 
-    print('end compute loss ', time()-t0)
-    t0 = time()
-
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
-
-    print('end backward ', time()-t0)
-    t0 = time()
-
-    # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)
     optimizer.step()
-
-    print('end float(loss) ', time()-t0)
-    t0 = time()
-
-    losses.append(loss)
-
-    print('end losses.append() ', time()-t0)
-    t0 = time()
-
+    losses.append(loss.cpu().detach().data[0])
     del loss
-
-    print('end del loss ', time()-t0)
-    t0 = time()
-
     if epoch%100==0 and epoch>0:
         print_info(losses,optimizer,epoch,epochs,model)
         print('batch size: ', noise_batch.shape[0]*len(bvals))
@@ -159,18 +120,9 @@ while epoch <= epochs+1:
     del noisy_signal_batch
     del lip_batch
 
-    current_loss = torch.mean(torch.stack(losses[-500:]))
-
-    print('end current_loss ', time()-t0)
-    t0 = time()
-
-    optimal = current_loss < best_loss
-
-    print('end optimal ', time()-t0)
-    t0 = time()
-
+    current_loss = np.mean(losses[-500:])
     if timer>100:
-        if optimal:
+        if current_loss < best_loss:
             timer = 0
             best_loss = current_loss
             torch.save({
@@ -192,17 +144,8 @@ while epoch <= epochs+1:
                 'kwargs_MM': kwargs_MM
             }, modeldir+model.name)
         print('new best loss: ', "{:.3e}".format(best_loss))
-
     timer += 1
-
-    print('end timer+1 ', time()-t0)
-    t0 = time()
-
     epoch += 1
-
-    print('end epoch+1 ', time()-t0)
-    t0 = time()
-    print('-'*100)
 
 
 plt.show()
