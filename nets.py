@@ -130,7 +130,10 @@ class UNet(nn.Module):
         x = self.up4(x, x1)
         logits = self.outc(x)
         return logits
-    
+
+# <- end unet
+
+
 class DiffusionNet_compr(nn.Module):    # !! the funnel net might affect the spectral dimension (no pts)
     def __init__(self, ks1=(33,7), ks2=(34,7), nc=32):
         super().__init__()
@@ -164,7 +167,6 @@ class DiffusionNet_compr(nn.Module):    # !! the funnel net might affect the spe
         x = self.up(x)
         return x
 
-# <- end unet
     
 # ----------------------------------
 #  TEST NEURAL NET ON RANDOM TENSOR:

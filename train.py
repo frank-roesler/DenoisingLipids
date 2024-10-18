@@ -15,6 +15,10 @@ Monotonicity        = False
 NormalizeBasisSets  = False  # normalizes all basis sets so that highest peak is 1. LEAVE THIS AT FALSE!!!
 ReduceSmallMMs      = False  # Removes MMs with small amplitude to speed up training
 
+epochs     = 100000
+lr         = 6e-5
+batch_size = 32    # will be multiplied by n_bvals
+
 trainLs = True  # train the network for lipid suppresion (otherwise it's just denoising)
 
 modelname = '03_SLOW/model/DiffusionNet_compr_33x7_34x7_32' # load this model
@@ -28,14 +32,11 @@ bvals = range(32,32+1)
 
 ppmAx, fAx, wCenter, fL = build_ppmAx(bw, noSmp)
 device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-epochs     = 100000
-lr         = 6e-5
-batch_size = 32    # will be multiplied by n_bvals
 print('device: ', device)
 
-model = DiffusionNet(ks=(35,3), nc=64).to(device)
+# model = DiffusionNet(ks=(35,3), nc=64).to(device)
 # model = UNet(n_classes=2,n_channels=2).to(device)
-# model = DiffusionNet_compr().to(device)
+model = DiffusionNet_compr(ks1=(15,32), ks2=(16,32), nc=32).to(device)
 loss_fn = torch.nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
 
@@ -74,19 +75,17 @@ while epoch <= epochs+1:
                                                                            include_lip  = includeLip,
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
                                                                            **kwargs_BS)
-        
-        noise_batch = noise_batch.to(device)
-
-        if trainLs:
-            noisy_signal_batch = noisy_signal_batch - lip_batch
-
+        noise_batch        = noise_batch.to(device)
         noisy_signal_batch = noisy_signal_batch.to(device)
-        pred = model(noisy_signal_batch)
-        loss += loss_fn(pred, noise_batch)/len(bvals)
+        lip_batch          = lip_batch.to(device)
+
+        pred   = model(noisy_signal_batch)
+        target = lip_batch + noise_batch
+        loss += loss_fn(pred, target)/len(bvals)
 
         # cmap = plt.get_cmap('winter', n_bvals)
         # S = noisy_signal_batch[0][0].detach().cpu()
-        # N = noisy_signal_batch[0][0].detach().cpu() - noise_batch[0][0].detach().cpu()
+        # N = target[0][0].detach().cpu()
         # ax[0].cla()
         # ax[1].cla()
         # low = 1500
@@ -106,7 +105,7 @@ while epoch <= epochs+1:
     optimizer.step()
     losses.append(float(loss))
     del loss
-    if epoch%1000==0 and epoch>0:
+    if epoch%100==0 and epoch>0:
         print_info(losses,optimizer,epoch,epochs,model)
         print('batch size: ', noise_batch.shape[0]*len(bvals))
         print('Time: ', time() - t0)

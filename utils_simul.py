@@ -268,6 +268,7 @@ def make_batch_diffusion(batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis
     # TODO: we have to return the pure lipid signals as well for training lipid removal
     return signal_batch.detach(), noise_batch.detach(), lipOut
 
+
 def add_lip(y, lip_basis, metab_basis_settings, globPara):
     """add lipid basis function with some random variation"""
     tAx = np.arange(metab_basis_settings['noSmp']) / metab_basis_settings['bw']
@@ -285,6 +286,7 @@ def add_lip(y, lip_basis, metab_basis_settings, globPara):
 
     fidSumOut   = np.zeros((y.shape[0],y.shape[1]), dtype=np.complex128)
     # TODO: AD it would be much more efficient to do this with matrix operations instead of a for loop (needs to be fixed later)
+
     for idx, lipMdlIdx in enumerate( lipMdlIdxs ):
         libBasePara = lip_basis.lipModel[ lipMdlIdx ]
 
