@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from utils_info import print_training_data, InfoScreen
 from utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
-from utils_io import Checkpoint
+from utils_io import Checkpoint, load_model
 from nets import DiffusionNet,UNet,DiffusionNet_compr
 from parameter_values import *
 from config_train import *
@@ -42,12 +42,11 @@ if LoadPretrainedModel:
 # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
 print('training...')
-info_screen = InfoScreen(output_every=plot_loss_every)
+info_screen = InfoScreen(output_every=plot_loss_every, plot_spectra_during_train=plotSpectraDuringTraining)
 checkpoint  = Checkpoint()
 model.train()
-# fig, ax = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
 while epoch <= epochs+1:
-    if timer>2000: # If best_loss hasn't been beaten in the last 1000 steps, increase batch size.
+    if timer>2000:
         if batch_size==128:
             break
         batch_size *= 2
@@ -64,40 +63,17 @@ while epoch <= epochs+1:
         noisy_signal_batch = noisy_signal_batch.to(device)
         noise_batch        = noise_batch.to(device)
         lip_batch          = lip_batch.to(device)
-
         pred   = model(noisy_signal_batch)
         target = lip_batch + noise_batch
         loss  += loss_fn(pred, target)/len(bvals)
-
-        # cmap = plt.get_cmap('winter', n_bvals)
-        # S = noisy_signal_batch[0][0].detach().cpu()
-        # N = target[0][0].detach().cpu()
-        # ax[0].cla()
-        # ax[1].cla()
-        # low = 1500
-        # high = 2500
-        # for b in range(n_bvals):
-        #     ax[0].plot(S[:, b], linewidth=0.5, color=cmap(b))
-        #     ax[1].plot(N[:, b], linewidth=0.5, color=cmap(b))
-        # ax[0].set_xlim(len(S), 0)  # ppm axis
-        # ax[1].set_xlim(len(N), 0)  # ppm axis
-        # plt.show(block=False)
-        # plt.pause(1)
-        # fig.savefig('lipids{}{}'.format(epoch,n_bvals), dpi=256)
-
+        info_screen.plot_spectra(n_bvals, noisy_signal_batch, target)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)
     optimizer.step()
-
     losses.append(loss.cpu().detach().data[0])
     info_screen.print_info(losses, optimizer, epoch, epochs, model, noise_batch.shape[0]*len(bvals))
     info_screen.plot_losses(epoch, losses)
-
-    del loss
-    del noise_batch
-    del noisy_signal_batch
-    del lip_batch
 
     current_loss = np.mean(losses[-500:])
     timer = checkpoint.save(timer, current_loss, epoch, model, optimizer, losses, best_loss)

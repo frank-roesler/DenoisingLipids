@@ -39,9 +39,10 @@ def print_empirical_noise_lvl(signal):
 
 
 class InfoScreen:
-    def __init__(self, output_every=1):
+    def __init__(self, output_every=1, plot_spectra_during_train=False):
         self.t0 = time()
         self.t1 = time()
+        self.plot_spectra_during_train = plot_spectra_during_train
         self.output_every = output_every
         self.init_plots()
 
@@ -51,6 +52,8 @@ class InfoScreen:
         self.s1 = self.ax.semilogy([0],[1], label='running mean')[0]
         self.ax.legend()
         self.ax.set_title('Loss')
+        if self.plot_spectra:
+            self.fig2, self.ax2 = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
 
     def print_info(self, losses, optimizer, epoch, epochs, model, batch_size):
         if epoch%self.output_every!=0:
@@ -83,5 +86,21 @@ class InfoScreen:
             plt.show(block=False)
             plt.pause(0.001)
 
-
+    def plot_spectra(self, n_bvals, spectrum_batch, target_batch):
+        if not self.plot_spectra_during_train:
+            return
+        cmap = plt.get_cmap('winter', n_bvals)
+        S = spectrum_batch[0][0].detach().cpu()
+        N = target_batch[0][0].detach().cpu()
+        self.ax2[0].cla()
+        self.ax2[1].cla()
+        for b in range(n_bvals):
+            self.ax2[0].plot(S[:, b], linewidth=0.5, color=cmap(b))
+            self.ax2[1].plot(N[:, b], linewidth=0.5, color=cmap(b))
+        self.ax2[0].set_xlim(len(S), 0)
+        self.ax2[1].set_xlim(len(N), 0)
+        self.fig2.canvas.draw()
+        plt.show(block=False)
+        plt.pause(0.1)
+        # fig.savefig('lipids{}{}'.format(epoch,n_bvals), dpi=256)
 
