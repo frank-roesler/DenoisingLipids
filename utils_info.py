@@ -52,7 +52,7 @@ class InfoScreen:
         self.s1 = self.ax.semilogy([0],[1], label='running mean')[0]
         self.ax.legend()
         self.ax.set_title('Loss')
-        if self.plot_spectra:
+        if self.plot_spectra_during_train:
             self.fig2, self.ax2 = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
 
     def print_info(self, losses, optimizer, epoch, epochs, model, batch_size):
