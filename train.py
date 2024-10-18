@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from time import time
 
 includeMMBG         = False
-includeLip          = True
+includeLip          = False
 LoadPretrainedModel = False
 Monotonicity        = False
 NormalizeBasisSets  = False  # normalizes all basis sets so that highest peak is 1. LEAVE THIS AT FALSE!!!
