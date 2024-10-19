@@ -8,8 +8,6 @@ from nets import DiffusionNet,UNet,DiffusionNet_compr
 from parameter_values import *
 from config_train import *
 import matplotlib.pyplot as plt
-from time import time
-import os
 
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None

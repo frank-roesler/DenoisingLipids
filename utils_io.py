@@ -51,6 +51,8 @@ class Checkpoint:
                 'optimizer_state_dict': optimizer.state_dict(),
                 'losses': losses,
                 'best_loss': best_loss}
-        torch.save(self.trainingData.update(dataLocal), os.path.join(modeldir, model.name))
+        dataOut = dict(self.trainingData)
+        dataOut.update(dataLocal)
+        torch.save(dataOut, os.path.join(modeldir, model.name))
         print('new best loss: ', "{:.3e}".format(best_loss))
         return 0
