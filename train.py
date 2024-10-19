@@ -31,13 +31,16 @@ best_loss = torch.Tensor([1e-2]).to(device) # Threshold for saving the model
 if LoadPretrainedModel:
     print_training_data(modelname)
     losses, epoch, current_loss, best_loss, batch_size = load_model(modelname, model, optimizer, device)
-    
+
+# ---------------------------------------------------
+# OLD NEEDS TO BE CHANGED!!!
 # checkpoint = torch.load(modelname)
 # #model = UNet(n_classes=2,n_channels=2).to(device)
 # model = DiffusionNet_compr().to(device)
 # optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
 # model.load_state_dict(checkpoint['model_state_dict'])
 # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+# ---------------------------------------------------
 
 print('training...')
 info_screen = InfoScreen(output_every=plot_loss_every, plot_spectra_during_train=plotSpectraDuringTraining)

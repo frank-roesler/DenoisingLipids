@@ -10,15 +10,14 @@ from scipy import io
 NoiseFit     = True # Set to "True" if model was trained to fit the noise, "False" if trained to fit signal
 DiffusionFit = True # Set to "True" if a 2d model was used to fit all b-values simultaneously
 
-model_path = 'DiffusionNet_35x3_64'
+model_path = 'trained_models/DiffusionNet_compr_15x3_16x3_32'
 matPath    = 'result.mat'
 
-device     = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 print(device)
 checkpoint = torch.load(model_path, map_location=device)
 
-model = DiffusionNet(ks=(35,3), nc=64).to(device)
-model.load_state_dict(checkpoint['model_state_dict'])
+model = checkpoint['model']
 model.eval()
 print(model)
 

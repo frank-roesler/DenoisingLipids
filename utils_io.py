@@ -5,9 +5,9 @@ import numpy as np
 import os
 
 
-def load_model(path, model, optimizer, device):
+def load_model(path, optimizer, device):
     checkpoint = torch.load(path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    model = checkpoint['model']
     try:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     except:
@@ -17,7 +17,7 @@ def load_model(path, model, optimizer, device):
     best_loss = checkpoint['best_loss']
     batch_size = checkpoint['batch_size']
     current_loss = np.mean(losses[-100:])
-    return losses, epoch, current_loss, best_loss, batch_size
+    return model, losses, epoch, current_loss, best_loss, batch_size
 
 
 
@@ -47,12 +47,12 @@ class Checkpoint:
             return timer
         best_loss = current_loss
         dataLocal = {'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
+                'model_state_dict': model,
+                'optimizer_state_dict': optimizer,
                 'losses': losses,
                 'best_loss': best_loss}
         dataOut = dict(self.trainingData)
         dataOut.update(dataLocal)
-        torch.save(dataOut, os.path.join(modeldir, model.name))
+        torch.save(dataOut, os.path.join(modeldir, model.name+'.pth'))
         print('new best loss: ', "{:.3e}".format(best_loss))
         return 0
