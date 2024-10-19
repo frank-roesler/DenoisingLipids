@@ -1,17 +1,34 @@
-import torch
+import scipy
 import numpy as np
-from utils_info import print_training_data, InfoScreen
-from utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
-from utils_io import Checkpoint, load_model
-from nets import DiffusionNet,UNet,DiffusionNet_compr
-from parameter_values import *
-from config_train import *
+import torch.cuda
+from scipy.fft import fft, ifft, fftshift
+from nets import DiffusionNet, UNet
+from utils_infer import denoise_signal
 import matplotlib.pyplot as plt
+from scipy import io
+
+NoiseFit     = True # Set to "True" if model was trained to fit the noise, "False" if trained to fit signal
+DiffusionFit = True # Set to "True" if a 2d model was used to fit all b-values simultaneously
+
+model_path = 'DiffusionNet_35x3_64'
+matPath    = 'result.mat'
+
+device     = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+print(device)
+checkpoint = torch.load(model_path, map_location=device)
+
+model = DiffusionNet(ks=(35,3), nc=64).to(device)
+model.load_state_dict(checkpoint['model_state_dict'])
+model.eval()
+print(model)
+
+mat    = scipy.io.loadmat(matPath)
+mrsSet = np.array(mat['metabData'])
+y = fftshift(ifft( np.conj( mrsSet ) ), 1 )
+
+# Denoise signal:
+y_dn_cplx = denoise_signal(y, model, diffusion=DiffusionFit, noise_fit=NoiseFit, device=device)
 
 
-device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-model = DiffusionNet_compr(ks1=(15,3), ks2=(16,3), nc=32).to(device)
-
-path = '/Users/frankrosler/Desktop/PhD/DiffusionNet_compr_15x3_16x3_32'
-checkpoint = torch.load(path, map_location=device)
-print(checkpoint)
+plt.plot(np.real(y_dn_cplx[:,1500:2500].T), linewidth=0.5)
+plt.show()
