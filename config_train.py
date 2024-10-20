@@ -6,7 +6,7 @@ Monotonicity        = False
 NormalizeBasisSets  = False  # normalizes all basis sets so that highest peak is 1. LEAVE THIS AT FALSE!!!
 ReduceSmallMMs      = False  # Removes MMs with small amplitude to speed up training
 trainLs             = True  # train the network for lipid suppresion (otherwise it's just denoising)
-plotSpectraDuringTraining = False
+plotSpectraDuringTraining = True
 
 epochs          = 100000
 lr              = 6e-5

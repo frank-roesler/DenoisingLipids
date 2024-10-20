@@ -27,7 +27,7 @@ model = torch.load(model_path, map_location=device, weights_only=False)
 model.eval()
 
 mat    = scipy.io.loadmat(matPath)
-mrsSet = np.array(mat['mrsiData'][0][0][1][:,490:499])
+mrsSet = np.array(mat['mrsiData'][0][0][1][:,32+15:32+18])
 
 y = ifft( np.conj( mrsSet ), axis=0)
 y = fftshift(y, axes=0 )
