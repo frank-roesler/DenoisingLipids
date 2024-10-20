@@ -1,12 +1,17 @@
 import torch.optim as optim
 import torch
 import numpy as np
-from utils_info import plot_losses, print_info, print_training_data, load_model
+from utils_info import print_training_data, InfoScreen
 from utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
+from utils_io import Checkpoint, load_model
 from nets import DiffusionNet,UNet,DiffusionNet_compr
 from parameter_values import *
+from config_train import *
 import matplotlib.pyplot as plt
 from time import time
+import os
+import numba
+from numba import njit, jit
 
 includeMMBG         = False
 includeLip          = True
@@ -17,7 +22,19 @@ ReduceSmallMMs      = False  # Removes MMs with small amplitude to speed up trai
 
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None
-lip_basis   = Lip_basis(lip_path, kwargs_Lipd ) if includeLip else None
+lip_basis   = Lip_basis(lip_path, kwargs_Lipid ) if includeLip else None
+
+lipidSettingNb  = lip_basis.get_numbaSettingPara()
+lipidModelNb    = lip_basis.get_numbaModelPara()
+metabSetttingNb = metab_basis.get_numbaSettingPara()
+
+# nbVoigtPara = numba.typed.List( voigtPara )
+# print(nbVoigtPara)
+
+# nbLipidPara = numba.typed.List( lipidPara )
+# print(nbLipidPara)
+
+
 
 # check metab_basis
 # fig, ax = plt.subplots(1,1, figsize=(10,6))
@@ -25,8 +42,8 @@ lip_basis   = Lip_basis(lip_path, kwargs_Lipd ) if includeLip else None
 # plt.show(block=False)
 # plt.pause(1)
 
-batchSz = 4
-imgRes  = 16   # should be 1024=32x32, 406, 2
+batchSz = 32
+imgRes  = 32   # should be 1024=32x32, 406, 2
 
 noisy_signal_batch, noise_batch, lip_batch = make_batch_diffusion( batchSz, imgRes, metab_basis, mmbg_basis, lip_basis,
                                                                    restrict_range=None, #(1500,2500), 
@@ -60,7 +77,7 @@ for B in range(batchSz):
     ax[1].set_xlim(4.8, 1.0)
     ax[0].set_ylim(-1,1)
     ax[1].set_ylim(-1,1)
-plt.show(block=False)
+plt.show(block=True)
 plt.pause(1)
 
 print("")

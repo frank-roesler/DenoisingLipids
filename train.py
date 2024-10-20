@@ -13,7 +13,7 @@ import os
 
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None
-lip_basis   = Lip_basis(lip_path, kwargs_Lipd ) if includeLip else None
+lip_basis   = Lip_basis(lip_path, kwargs_Lipid ) if includeLip else None
 
 ppmAx, fAx, wCenter, fL = build_ppmAx(bw, noSmp)
 device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')

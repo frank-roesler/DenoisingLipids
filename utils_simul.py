@@ -1,12 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.random import rand, randn
+from numpy.random import rand, randn, randint
 import torch
 from numpy.fft import ifft, fftshift
 import scipy.io
 from glob import glob
 import scipy.io
-# from numba import njit
+import numba
+from numba import njit, jit
+import time
 
 def build_ppmAx(bw, noSmp):
     gamma = 42.577  # [MHz/T]
@@ -21,11 +23,25 @@ def build_ppmAx(bw, noSmp):
 
 def voigtFuncLip(para, tAx):
     tAx = tAx[:,np.newaxis]
+    #tAxNew = np.expand_dims(tAx, -1)
+
     constL = np.pi
     constG = 2 * np.pi / np.sqrt(16 * np.log(2))
     # voigtFunc = @(para,tAx) para(1)*exp( -1i*para(2)*tAx+1i*para(3) ).*exp( -(constL*para(4))*tAx-(constG*para(5))^2*tAx.^2); # the one from MatLab
     fid = para['amplitude'] * np.exp( -1j*2*np.pi*para['freq_offset']*tAx + 1j*para['phase_offset'] ) # here we have a factor of 2*pi to align with data from SVD
     damp = np.exp(-(constL * para['lorentz_width']) * tAx - (constG*para['gauss_width']) ** 2 * tAx ** 2 )
+    return fid * damp
+
+@njit(nopython=True)
+def voigtFuncLipFast(voigtPara, tAx):
+    #tAx = tAx[:,np.newaxis]
+    #tAxNew = np.expand_dims(tAx[0], -1)
+
+    constL = np.pi
+    constG = 2 * np.pi / np.sqrt(16 * np.log(2))
+    # voigtFunc = @(para,tAx) para(1)*exp( -1i*para(2)*tAx+1i*para(3) ).*exp( -(constL*para(4))*tAx-(constG*para(5))^2*tAx.^2); # the one from MatLab
+    fid = voigtPara[0] * np.exp( -1j*2*np.pi*voigtPara[1]*tAx + 1j*voigtPara[2] ) # here we have a factor of 2*pi to align with data from SVD
+    damp = np.exp(-(constL * voigtPara[3]) * tAx - (constG*voigtPara[4]) ** 2 * tAx ** 2 )
     return fid * damp
 
 def voigtFuncMmbg(para, tAx):
@@ -97,6 +113,16 @@ class Metab_basis:
 
         return naked_patterns, metab_sd
 
+    def get_numbaSettingPara( self ):
+        numbaList = []
+        for value in self.kwargs.values():
+            if ( type(value) is not tuple ):
+                numbaList.append( [ np.array( [float(value)] ) ] )
+            else:
+                numbaList.append( [ np.array( tuple(map(float, value)) ) ] )
+
+        return numbaList
+
 class Lip_basis:    # class to load the lipid model from multiple matlab files (so that we do not have to access the files in every training loop)
     def __init__(self, path, kwargs_Lip):
         self.kwargs    = kwargs_Lip
@@ -104,7 +130,7 @@ class Lip_basis:    # class to load the lipid model from multiple matlab files (
         self.lipModel = self.load_para()
     
     def load_para(self):
-        t = np.arange(self.kwargs['noSmp'])/self.kwargs['bw']
+        #t = np.arange(self.kwargs['noSmp'])/self.kwargs['bw']
         #for idx, matPath, matName in enumerate( zip( self.lip_path, self.lipid_setFiles ) ):
         startIdx = 0
         lipModel = {}
@@ -123,6 +149,26 @@ class Lip_basis:    # class to load the lipid model from multiple matlab files (
                 #voigtFuncLip(voigtPara,np.transpose( t ))
             startIdx = idx + 1
         return lipModel
+    def get_numbaModelPara ( self ):
+        lipModelNumba = []
+        for lipPara in self.lipModel.items():
+            voigtPara = []
+            voigtPara.append( (lipPara[1]['amplitude']).squeeze() )
+            voigtPara.append( (lipPara[1]['freq_offset']).squeeze() )
+            voigtPara.append( (lipPara[1]['phase_offset']).squeeze() )
+            voigtPara.append( (lipPara[1]['lorentz_width']).squeeze() )
+            voigtPara.append( (float(lipPara[1]['gauss_width']))*np.full( len(lipPara[1]['amplitude']), 1 ) )
+            lipModelNumba.append( voigtPara )
+        return lipModelNumba
+    def get_numbaSettingPara( self ):
+        numbaList = []
+        for value in self.kwargs.values():
+            if ( type(value) is not tuple ):
+                numbaList.append( [ np.array( [float(value)] ) ] )
+            else:
+                numbaList.append( [ np.array( tuple(map(float, value)) ) ] )
+
+        return numbaList
 
 class MMBG_basis:
     def __init__(self, mmbg_path, kwargs_MM, reduce_small_mm=False):
@@ -191,7 +237,22 @@ def simulate_diffusion(n_bvals, metab_basis, mmbg_basis, lip_basis,
     if mmbg:
         y = add_mmbg_diffusion(y, **mmbg_basis.kwargs, n_bvals = n_bvals, reduce_mms = reduce_mms, monotone_diffusion=monotone_diffusion)
     if lip:
+        #lip_basis_simple = [lip_basis.lipModel, lip_basis.kwargs]
+        # p1 = lip_basis.get_numbaModelPara()
+        # p2 = lip_basis.get_numbaSettingPara()
+        # p3 = metab_basis.get_numbaSettingPara()
+        # p4 = list( globPara.values() )
+        # #y, lipSig = add_lipNumba(y, p1, p2, p3, p4 )
+        # start = time.time()
+        # y, lipSig = add_lipNumba(y, numba.typed.List( p1 ), numba.typed.List( p2 ), numba.typed.List( p3 ), numba.typed.List( p4 ) )
+        # end = time.time()
+        # print(end - start)
+
+        start = time.time()
         y, lipSig = add_lip(y, lip_basis, metab_basis.kwargs, globPara)
+        end = time.time()
+        print(end - start)
+
         lipSig = fftshift(ifft(np.conj(lipSig), axis=0), axes=0)
     else:
         lipSig = 0
@@ -273,8 +334,8 @@ def add_lip(y, lip_basis, metab_basis_settings, globPara):
     """add lipid basis function with some random variation"""
     tAx = np.arange(metab_basis_settings['noSmp']) / metab_basis_settings['bw']
 
-    gamma = 42.577  # [MHz/T]
-    Bo    = 6.98    # [T]
+    gamma = 42.577      # [MHz/T]
+    Bo    = 6.98        # [T]
     fL    = Bo * gamma  # [MHz]
 
     # create random parameters
@@ -325,6 +386,83 @@ def add_lip(y, lip_basis, metab_basis_settings, globPara):
 
     return fidSumOut + y, fidSumOut # lip+metab, lip only
 
+@njit(nopython=True,parallel=True)
+def add_lipNumba(y, lipidModelPara, lipidSettingPara, metabSettingPara, globPara):
+    """add lipid basis function with some random variation (accelerated)"""
+    tAx = np.arange(metabSettingPara[1][0][0]) / metabSettingPara[0][0][0]
+    tAx = tAx[:,np.newaxis]
+
+    gamma = 42.577      # [MHz/T]
+    Bo    = 6.98        # [T]
+    fL    = Bo * gamma  # [MHz]
+
+    # create random parameters
+    # select random lipid basis from data
+    lipMdlIdxs   = randint(0, len( lipidModelPara ), y.shape[1] )
+
+    globAmpFac = lipidSettingPara[3][0][1] * np.random.randn(y.shape[1]) + lipidSettingPara[3][0][0]
+    globAmpFac[globAmpFac<0] = 0
+
+    fidSumOut   = np.zeros((y.shape[0],y.shape[1]), dtype=np.complex64 )
+    # TODO: AD it would be much more efficient to do this with matrix operations instead of a for loop (needs to be fixed later)
+
+    #for idx, lipMdlIdx in enumerate( lipMdlIdxs ):
+        # libBasePara = lipidModelPara[lipMdlIdx]
+    for idx in numba.prange( len(lipMdlIdxs) ):
+        libBasePara = lipidModelPara[ lipMdlIdxs[idx] ]
+
+        # # create random freq offsets [Hz] for each resonance (!! append is not thread safe)
+        # voigtPara = []
+        # # amp
+        # voigtPara.append( (1 + lipidSettingPara[4][0][0] * rand( len( libBasePara[0] ) ) ) * libBasePara[0] )
+        # # freq_offset
+        # voigtPara.append( libBasePara[1] + lipidSettingPara[2][0][0] + (lipidSettingPara[2][0][1] - lipidSettingPara[2][0][0]) * rand( len( libBasePara[1] ) ) )
+        # # phase_offset
+        # voigtPara.append( libBasePara[2] + np.deg2rad( globPara[1]) - np.deg2rad(metabSettingPara[2][0][0]) )   # in the lipid basis we have the "right" phase, i.e., the phase from the measurement which might be different from the basis set phasae
+        # # lorentz
+        # voigtPara.append( libBasePara[3] )
+        # # gauss
+        # voigtPara.append( libBasePara[4] )
+
+        # create random freq offsets [Hz] for each resonance
+        voigtPara = np.zeros(( 5, len( libBasePara[0] )), dtype=np.float64)
+        # amp
+        voigtPara[0,:] = ( (1 + lipidSettingPara[4][0][0] * rand( len( libBasePara[0] ) ) ) * libBasePara[0] )
+        # freq_offset
+        voigtPara[1,:] = ( libBasePara[1] + lipidSettingPara[2][0][0] + (lipidSettingPara[2][0][1] - lipidSettingPara[2][0][0]) * rand( len( libBasePara[1] ) ) )
+        # phase_offset
+        voigtPara[2,:] = ( libBasePara[2] + np.deg2rad( globPara[1]) - np.deg2rad(metabSettingPara[2][0][0]) )   # in the lipid basis we have the "right" phase, i.e., the phase from the measurement which might be different from the basis set phasae
+        # lorentz
+        voigtPara[3,:] = ( libBasePara[3] )
+        # gauss
+        voigtPara[4,:] = ( libBasePara[4] )
+
+
+        fid        = voigtFuncLipFast(voigtPara, tAx)   # create lipid voigt componets
+        fidSum     = np.sum(fid, axis=-1)           # combine lipid voigt components
+        # to save time, we are using the first fid point for normalization (so that we do not have to do the fft each loop)
+        normFac    = abs(y[0,idx])/abs(fidSum[0])
+
+        fidSumOut[:,idx] = fidSum*normFac*globAmpFac[idx]
+
+
+    # DBG: for testing (compare lipid and metabolite spectra) ->
+    # specLip    = fftshift(ifft(np.conj(fidSum), axis=0), axes=0)    # TODO: think if there is a better solution as it is computationally expansive doing the fft in each of the batch loops
+    # normOneLip = max( np.abs(specLip) )         # get the normalization factor (later used for lipid amplitude scaling)
+    # specMetab = fftshift(ifft(np.conj(y.squeeze()), axis=0), axes=0)
+    # normOneMetab = max( np.abs(specMetab) )
+    # ppm, fAx, wCenter, fL = build_ppmAx(metab_basis_settings['bw'], metab_basis_settings['noSmp'])
+
+    # fig, ax = plt.subplots(1,1, figsize=(10,6))
+    # ax.plot(ppm, specLip.real*normFac )
+    # ax.plot(ppm, specMetab.real )
+    # ax.plot(ppm, specMetab.real + specLip.real*normFac)
+    # ax.set_xlim(4.8, 1.0)
+    # plt.pause(1)
+    # plt.show(block=False)
+    # <-
+
+    return fidSumOut + y, fidSumOut # lip+metab, lip only
 
 
 def add_mmbg_diffusion(signal, noSmp, bw, globalPara, mmPara, n_bvals, globalAmp=1, globalL=0, sdGlobalL=3,
