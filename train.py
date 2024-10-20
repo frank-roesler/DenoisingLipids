@@ -65,7 +65,7 @@ while epoch <= epochs+1:
         noise_batch        = noise_batch.to(device)
         lip_batch          = lip_batch.to(device)
         pred   = model(noisy_signal_batch)
-        target = lip_batch + noise_batch
+        target = noisy_signal_batch - lip_batch - noise_batch
         loss  += loss_fn(pred, target)/len(bvals)
         info_screen.plot_spectra(n_bvals, noisy_signal_batch, target)
     optimizer.zero_grad(set_to_none=True)
