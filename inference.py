@@ -27,17 +27,16 @@ model = torch.load(model_path, map_location=device, weights_only=False)
 model.eval()
 
 mat    = scipy.io.loadmat(matPath)
-mrsSet = np.array(mat['mrsiData'][0][0][1][:,492:498])
-
-print(mrsSet)
+mrsSet = np.array(mat['mrsiData'][0][0][1][:,490:499])
 
 y = ifft( np.conj( mrsSet ), axis=0)
 y = fftshift(y, axes=0 )
-plt.plot(np.real(y), linewidth=0.5)
-plt.show()
+
 # Denoise signal:
 y_dn_cplx = denoise_signal(y, model, diffusion=DiffusionFit, noise_fit=NoiseFit, device=device)
-#
-#
-plt.plot(np.real(y_dn_cplx), linewidth=0.5)
+
+
+fig, ax = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
+ax[0].plot(np.real(y), linewidth=0.5)
+ax[1].plot(np.real(y_dn_cplx), linewidth=0.5)
 plt.show()
