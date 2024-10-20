@@ -66,10 +66,9 @@ class Metab_basis:
         self.maxMetabCon = (metab_con_s[list(metab_con_s)[-1]])[0]
 
         self.kwargs      = kwargs_BS
-        self.metab_paths = sorted(glob(path+'/*.mat'), key = lambda s: s.casefold())
-        metab_names = [metab_path.split('/')[-1] for metab_path in self.metab_paths]   # find all *.mat files
-        metab_names = sorted([name.split('.')[0] for name in metab_names], key = lambda s: s.casefold())
-        self.metab_names    = metab_names
+        self.metab_paths = sorted(path.glob('*.mat'), key = lambda s: s.as_posix().casefold())
+        metab_names = sorted([metab_path.stem for metab_path in self.metab_paths], key = lambda s: s.casefold())  # find all *.mat files
+        self.metab_names = metab_names
         self.naked_patterns, self.metab_sd = self.make_patterns(normalize=normalize_basis_sets, metabCon = metab_con)
 
     def make_patterns(self, normalize=False, metabCon = None):
@@ -101,7 +100,7 @@ class Metab_basis:
 class Lip_basis:    # class to load the lipid model from multiple matlab files (so that we do not have to access the files in every training loop)
     def __init__(self, path, kwargs_Lip):
         self.kwargs    = kwargs_Lip
-        self.lip_path  = sorted(glob(path+'/*.mat'), key = lambda s: s.casefold())
+        self.lip_path  = sorted(path.glob('*.mat'), key = lambda s: s.as_posix().casefold())
         self.lipModel = self.load_para()
     
     def load_para(self):
@@ -264,10 +263,11 @@ def make_batch_diffusion(batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis
         lip_batch    = torch.stack([c for (s,g,c) in batch])
         lipOut = lip_batch.detach()
     else:
-        lipOut = 0
+        lipOut = torch.Tensor([0])
 
     # TODO: we have to return the pure lipid signals as well for training lipid removal
     return signal_batch.detach(), noise_batch.detach(), lipOut
+
 
 def add_lip(y, lip_basis, metab_basis_settings, globPara):
     """add lipid basis function with some random variation"""
@@ -286,6 +286,7 @@ def add_lip(y, lip_basis, metab_basis_settings, globPara):
 
     fidSumOut   = np.zeros((y.shape[0],y.shape[1]), dtype=np.complex128)
     # TODO: AD it would be much more efficient to do this with matrix operations instead of a for loop (needs to be fixed later)
+
     for idx, lipMdlIdx in enumerate( lipMdlIdxs ):
         libBasePara = lip_basis.lipModel[ lipMdlIdx ]
 
