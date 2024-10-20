@@ -15,4 +15,4 @@ plot_loss_every = 1000    # plot and print info every n epochs
 modeldir  = 'trained_models/' # save model as
 modelname = modeldir + 'DiffusionNet_compr_15x3_16x3_32' # load this model
 
-bvals = range(128,128+1)
+bvals = range(64,64+1)

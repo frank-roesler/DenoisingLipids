@@ -61,8 +61,8 @@ model.eval();
 
 load( anaMatrixPath );
 
-#idxList = [ [ 5 14]; [ 5+7 14+3] ];    % occipital
-idxList = [ [ 14 14]; [ 14+7 14+3] ];    % occipital
+idxList = [ [ 5 14]; [ 5+7 14+3] ];    % occipital
+%idxList = [ [ 14 14]; [ 14+7 14+3] ];    % occipital
 
 [X, Y] = meshgrid(idxList(1,1):idxList(2,1),idxList(1,2):idxList(2,2))
 
@@ -100,14 +100,17 @@ end
 
 y_py = py.numpy.reshape(y_py, [int64(length( linIdx )), size(y,1)] );
 
-% figure
-% plot( reshape( double( py.array.array('d',py.numpy.nditer(y_py.real)) ), [size(y,1), length( expInfo.dwMRSdata )] ) );
+figure
+plot( double( py.array.array('d',py.numpy.nditer(y_py.T.real)) ) );
 
 y_dn_cplx = py.utils_infer.denoise_signal( y_py.T, model, pyargs('diffusion', MultiDimFit, 'noise_fit', NoiseFit, 'device', device ) )
 
-spec = double( py.array.array('d',py.numpy.nditer(y_dn_cplx.real)) ) + i*double( py.array.array('d',py.numpy.nditer(y_dn_cplx.imag)) );
+figure
+plot( real( double( y_dn_cplx ) ) );
 
-spec = reshape(spec, [size(y,1), int64(length( linIdx ))] );
+spec = double( y_dn_cplx );%double( py.array.array('d',py.numpy.nditer(y_dn_cplx.real)) ) + i*double( py.array.array('d',py.numpy.nditer(y_dn_cplx.imag)) );
+
+%spec = reshape(spec, [size(y,1), int64(length( linIdx ))] );
 
 figure;
 %hold on;

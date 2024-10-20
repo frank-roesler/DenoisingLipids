@@ -61,8 +61,8 @@ model.eval();
 
 load( anaMatrixPath );
 
-idxList = [ [ 5 14]; [ 5+7 14+3] ];    % occipital
-%idxList = [ [ 14 14]; [ 14+7 14+3] ];    % occipital
+%idxList = [ [ 5 14]; [ 5+7 14+3] ];    % occipital
+idxList = [ [ 14 14]; [ 14+7 14+3] ];    % occipital
 
 [X, Y] = meshgrid(idxList(1,1):idxList(2,1),idxList(1,2):idxList(2,2))
 
@@ -100,12 +100,13 @@ end
 
 y_py = py.numpy.reshape(y_py, [int64(length( linIdx )), size(y,1)] );
 
-% figure
-% plot( reshape( double( py.array.array('d',py.numpy.nditer(y_py.real)) ), [size(y,1), length( expInfo.dwMRSdata )] ) );
+figure
+plot( double( py.array.array('d',py.numpy.nditer(y_py.T.real)) ) );
 
-y_dn_cplx = py.utils_infer.denoise_signal( y_py, model, true, device, true);
+y_dn_cplx = py.utils_infer.denoise_signal( y_py.T, model, pyargs('diffusion', MultiDimFit, 'noise_fit', NoiseFit, 'device', device ) )
 
-y_dn_cplx = py.utils_infer.denoise_signal( y_py, model, pyargs('diffusion',MultiDimFit)
+figure
+plot( double( y_dn_cplx) );
 
 spec = double( py.array.array('d',py.numpy.nditer(y_dn_cplx.real)) ) + i*double( py.array.array('d',py.numpy.nditer(y_dn_cplx.imag)) );
 
@@ -122,22 +123,6 @@ plot(fliplr(mrsiData.ppm), real( spec(:,:) ));
 linkaxes([ax1,ax2],'x');
 axHdl = gca;
 axHdl.XDir = 'reverse';
-xlim([0.5 4.3]);
+%xlim([0.5 4.3]);
 %plot( flip(real( getfield( op_averaging( metab ), 'specs') ) ) );
 %hold off;
-
-for diffExpItx = 1:length( expInfo.dwMRSdata )
-    try
-        expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCorDN = expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCor;
-    catch
-        expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCorDN = expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metab;
-    end
-    expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCorDN.fids  = conj(fft(fftshift(spec(:,diffExpItx),1),[],1)); 
-    expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCorDN.specs = fftshift(ifft(expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCorDN.fids,[],1), 1 );
-
-    %op_plotspec_ri( expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCorDN );
-    %op_plotspec_ri( expInfo.dwMRSdata(diffExpItx).dataStruct.dataComb.metabPriorCor );
-end
-
-save( anaMatrixPath, 'expInfo', '-v7' );
-
