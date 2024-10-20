@@ -33,7 +33,7 @@ def voigtFuncLip(para, tAx):
     return fid * damp
 
 @njit(nopython=True)
-def voigtFuncLipFast(voigtPara, tAx):
+def voigtFuncLipNumba(voigtPara, tAx):
     #tAx = tAx[:,np.newaxis]
     #tAxNew = np.expand_dims(tAx[0], -1)
 
@@ -243,10 +243,10 @@ def simulate_diffusion(n_bvals, metab_basis, mmbg_basis, lip_basis,
         p3 = metab_basis.get_numbaSettingPara()
         p4 = list( globPara.values() )
         #y, lipSig = add_lipNumba(y, p1, p2, p3, p4 )
-        start = time.time()
+        # start = time.time()
         y, lipSig = add_lipNumba(y, numba.typed.List( p1 ), numba.typed.List( p2 ), numba.typed.List( p3 ), numba.typed.List( p4 ) )
-        end = time.time()
-        print(end - start)
+        # end = time.time()
+        # print(end - start)
 
         # start = time.time()
         # y, lipSig = add_lip(y, lip_basis, metab_basis.kwargs, globPara)
@@ -408,7 +408,7 @@ def add_lipNumba(y, lipidModelPara, lipidSettingPara, metabSettingPara, globPara
 
     #for idx, lipMdlIdx in enumerate( lipMdlIdxs ):
         # libBasePara = lipidModelPara[lipMdlIdx]
-    for idx in numba.prange( len(lipMdlIdxs) ):
+    for idx in numba.prange( len(lipMdlIdxs) ):     # parallel loop
         libBasePara = lipidModelPara[ lipMdlIdxs[idx] ]
 
         # # create random freq offsets [Hz] for each resonance (!! append is not thread safe)
@@ -438,7 +438,7 @@ def add_lipNumba(y, lipidModelPara, lipidSettingPara, metabSettingPara, globPara
         voigtPara[4,:] = ( libBasePara[4] )
 
 
-        fid        = voigtFuncLipFast(voigtPara, tAx)   # create lipid voigt componets
+        fid        = voigtFuncLipNumba(voigtPara, tAx)   # create lipid voigt componets
         fidSum     = np.sum(fid, axis=-1)           # combine lipid voigt components
         # to save time, we are using the first fid point for normalization (so that we do not have to do the fft each loop)
         normFac    = abs(y[0,idx])/abs(fidSum[0])

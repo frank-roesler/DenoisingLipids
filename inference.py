@@ -39,4 +39,6 @@ y_dn_cplx = denoise_signal(y, model, diffusion=DiffusionFit, noise_fit=NoiseFit,
 fig, ax = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
 ax[0].plot(np.real(y), linewidth=0.5)
 ax[1].plot(np.real(y_dn_cplx), linewidth=0.5)
-plt.show()
+#plt.show()
+plt.show(block=False)
+plt.pause(1)

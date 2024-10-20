@@ -15,8 +15,8 @@ kwargs_BS = {'bw':          bw,
              #'phaseOffs':   (-20,+20),        # [min,max] [Deg,Deg] phase variation
              'phaseOffs':   (0,0),        # [min,max] [Deg,Deg] phase variation
              'freq_offset': (-2,+2),          # [min,max] [Hz] frequ offset, TODO: this should rather be a global paramter, the same for all metabolites (local frequency offsets, might be included, but should rather be small [-1...+1]Hz)
-             #'noiseLvl':    (0.010,0.020)     # relative noise level 0 to 1 (SNR=inf,SNR=0)
-             'noiseLvl':    (0.0,0.01)     # relative noise level 0 to 1 (SNR=inf,SNR=0)
+             #'noiseLvl':    (0.010,0.020)     # relative noise level 0 to 1 (SNR=inf,SNR=1)
+             'noiseLvl':    (0.010,0.015)     # relative noise level 0 to 1 (SNR=inf,SNR=1)
              }
 
 # Mekle, R., Mlynárik, V., Gambarota, G., Hergt, M., Krueger, G., & Gruetter, R. (2009). MR spectroscopy of the human brain with enhanced signal intensity at ultrashort echo times on a clinical platform at 3T and 7T. Magnetic Resonance in Medicine, 61(6), 1279–1285. https://doi.org/10.1002/mrm.21961
@@ -44,7 +44,7 @@ metab_con = { 'Asc':  (0.1 , 0.1),
 kwargs_Lipid = { 'bw':          bw,
                 'noSmp':       noSmp,
                 'freqOffs':    (-1,+1),        # random variation in lipid frequencys in each of the voigt basis functions
-                'globalAmp':   (0.0,0.0),   # [mean, variance] folded normal distribution (1.0 means at the level of metabolites, this should reflect how many lipids we are seeing per pixel)
+                'globalAmp':   (0.0,8.0),   # [mean, variance] folded normal distribution (1.0 means at the level of metabolites, this should reflect how many lipids we are seeing per pixel)
                 'sdAmp':       0.1,          # relative value, random per resonance in the range (to add some variation in the lipid model)
               }
 

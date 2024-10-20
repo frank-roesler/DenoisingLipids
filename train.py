@@ -8,6 +8,7 @@ from nets import DiffusionNet,UNet,DiffusionNet_compr
 from parameter_values import *
 from config_train import *
 import matplotlib.pyplot as plt
+from time import time
 
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None
@@ -54,6 +55,7 @@ while epoch <= epochs+1:
         timer = 100
     loss = torch.zeros(1, device=device)
     for n_bvals in bvals:
+        start = time()
         noisy_signal_batch, noise_batch, lip_batch = make_batch_diffusion( batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis,
                                                                            restrict_range=None, #(1500,2500), 
                                                                            #restrict_range=(0,404), 
@@ -61,6 +63,8 @@ while epoch <= epochs+1:
                                                                            include_lip  = includeLip,
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
                                                                            **kwargs_BS)
+        end = time()
+        print(end - start)
         noisy_signal_batch = noisy_signal_batch.to(device)
         noise_batch        = noise_batch.to(device)
         lip_batch          = lip_batch.to(device)

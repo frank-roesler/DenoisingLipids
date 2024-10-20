@@ -38,7 +38,7 @@ class Checkpoint:
             'noSmp': noSmp,
             'kwargs_BS': kwargs_BS,
             'kwargs_MM': kwargs_MM,
-            'kwargs_Lipd': kwargs_Lipd}
+            'kwargs_Lipid': kwargs_Lipid}
 
     def save(self, timer, current_loss, epoch, model, optimizer, losses, best_loss):
         if timer<100:
