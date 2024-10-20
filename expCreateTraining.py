@@ -42,8 +42,8 @@ metabSetttingNb = metab_basis.get_numbaSettingPara()
 # plt.show(block=False)
 # plt.pause(1)
 
-batchSz = 32
-imgRes  = 32   # should be 1024=32x32, 406, 2
+batchSz = 4
+imgRes  = 4   # should be 1024=32x32, 406, 2
 
 noisy_signal_batch, noise_batch, lip_batch = make_batch_diffusion( batchSz, imgRes, metab_basis, mmbg_basis, lip_basis,
                                                                    restrict_range=None, #(1500,2500), 
@@ -66,15 +66,20 @@ for B in range(batchSz):
     Max = np.max(torch.sqrt(noisy_signal_batch[B,0,:,0]**2 + noisy_signal_batch[B,1,:,0]**2).numpy())
     M_mean += Max/batchSz
     for i in range(n_bvals):
-        ax[0].plot(ppm, noisy_signal_batch[B,0,:,i], linewidth=0.5, color=cmap(i))
-        ax[0].plot(ppm, noisy_signal_batch[B,0,:,i]-noise_batch[B,0,:,i], '--', linewidth=0.5, color=cmap(i))
-        ax[0].plot(ppm, noisy_signal_batch[B,0,:,i]-noise_batch[B,0,:,i]-lip_batch[B,0,:,i], '-.', linewidth=0.5, color=cmap(i))
-        ax[1].plot(ppm, noisy_signal_batch[B,1,:,i], linewidth=0.5, color=cmap(i))
-        ax[1].plot(ppm, noisy_signal_batch[B,1,:,i]-noise_batch[B,1,:,i]-lip_batch[B,1,:,i], '-.',linewidth=0.5, color=cmap(i))
-    ax[0].set_xlim(max(ppm), min(ppm) )
-    ax[1].set_xlim(max(ppm), min(ppm) )
-    ax[0].set_xlim(4.8, 1.0)
-    ax[1].set_xlim(4.8, 1.0)
+        # ax[0].plot(ppm, noisy_signal_batch[B,0,:,i], linewidth=0.5, color=cmap(i))
+        # ax[0].plot(ppm, noisy_signal_batch[B,0,:,i]-noise_batch[B,0,:,i], '--', linewidth=0.5, color=cmap(i))
+        # ax[0].plot(ppm, noisy_signal_batch[B,0,:,i]-noise_batch[B,0,:,i]-lip_batch[B,0,:,i], '-.', linewidth=0.5, color=cmap(i))
+        # ax[1].plot(ppm, noisy_signal_batch[B,1,:,i], linewidth=0.5, color=cmap(i))
+        # ax[1].plot(ppm, noisy_signal_batch[B,1,:,i]-noise_batch[B,1,:,i]-lip_batch[B,1,:,i], '-.',linewidth=0.5, color=cmap(i))
+        ax[0].plot( noisy_signal_batch[B,0,:,i], linewidth=0.5, color=cmap(i))
+        ax[0].plot( noisy_signal_batch[B,0,:,i]-noise_batch[B,0,:,i], '--', linewidth=0.5, color=cmap(i))
+        ax[0].plot( noisy_signal_batch[B,0,:,i]-noise_batch[B,0,:,i]-lip_batch[B,0,:,i], '-.', linewidth=0.5, color=cmap(i))
+        ax[1].plot( noisy_signal_batch[B,1,:,i], linewidth=0.5, color=cmap(i))
+        ax[1].plot( noisy_signal_batch[B,1,:,i]-noise_batch[B,1,:,i]-lip_batch[B,1,:,i], '-.',linewidth=0.5, color=cmap(i))
+    #ax[0].set_xlim(max(ppm), min(ppm) )
+    #ax[1].set_xlim(max(ppm), min(ppm) )
+    # ax[0].set_xlim(4.8, 1.0)
+    # ax[1].set_xlim(4.8, 1.0)
     ax[0].set_ylim(-1,1)
     ax[1].set_ylim(-1,1)
 plt.show(block=True)

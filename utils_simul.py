@@ -238,20 +238,20 @@ def simulate_diffusion(n_bvals, metab_basis, mmbg_basis, lip_basis,
         y = add_mmbg_diffusion(y, **mmbg_basis.kwargs, n_bvals = n_bvals, reduce_mms = reduce_mms, monotone_diffusion=monotone_diffusion)
     if lip:
         #lip_basis_simple = [lip_basis.lipModel, lip_basis.kwargs]
-        # p1 = lip_basis.get_numbaModelPara()
-        # p2 = lip_basis.get_numbaSettingPara()
-        # p3 = metab_basis.get_numbaSettingPara()
-        # p4 = list( globPara.values() )
-        # #y, lipSig = add_lipNumba(y, p1, p2, p3, p4 )
-        # start = time.time()
-        # y, lipSig = add_lipNumba(y, numba.typed.List( p1 ), numba.typed.List( p2 ), numba.typed.List( p3 ), numba.typed.List( p4 ) )
-        # end = time.time()
-        # print(end - start)
-
+        p1 = lip_basis.get_numbaModelPara()
+        p2 = lip_basis.get_numbaSettingPara()
+        p3 = metab_basis.get_numbaSettingPara()
+        p4 = list( globPara.values() )
+        #y, lipSig = add_lipNumba(y, p1, p2, p3, p4 )
         start = time.time()
-        y, lipSig = add_lip(y, lip_basis, metab_basis.kwargs, globPara)
+        y, lipSig = add_lipNumba(y, numba.typed.List( p1 ), numba.typed.List( p2 ), numba.typed.List( p3 ), numba.typed.List( p4 ) )
         end = time.time()
         print(end - start)
+
+        # start = time.time()
+        # y, lipSig = add_lip(y, lip_basis, metab_basis.kwargs, globPara)
+        # end = time.time()
+        # print(end - start)
 
         lipSig = fftshift(ifft(np.conj(lipSig), axis=0), axes=0)
     else:
