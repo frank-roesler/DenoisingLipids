@@ -53,7 +53,7 @@ class InfoScreen:
         self.ax.legend()
         self.ax.set_title('Loss')
         if self.plot_spectra_during_train:
-            self.fig2, self.ax2 = plt.subplots(2,1,figsize=(14,6), constrained_layout=True)
+            self.fig2, self.ax2 = plt.subplots(3,1,figsize=(14,6), constrained_layout=True)
 
     def print_info(self, losses, optimizer, epoch, epochs, model, batch_size):
         if epoch%self.output_every!=0:
@@ -72,33 +72,39 @@ class InfoScreen:
 
     def plot_losses(self, epoch, train_losses, window=100):
         """plots loss and accuracy curves during training, along with their running means."""
-        if epoch>0 and epoch%self.output_every==0:
-            self.ax.set_xlim(1,epoch+1)
-            self.ax.set_ylim((0.9*np.min(train_losses), 1.1*np.max(train_losses)))
-            self.p1.set_xdata(range(epoch + 1))
-            self.p1.set_ydata(train_losses)
-            if epoch>2*window+1:
-                x = np.arange(window-1, epoch + 1 - window)
-                y = np.convolve(train_losses, np.ones(2 * window) / (2 * window), mode='valid')
-                self.s1.set_xdata(range(window-1, epoch + 1 - window))
-                self.s1.set_ydata(np.convolve(train_losses, np.ones(2 * window) / (2 * window), mode='valid'))
-            self.fig.canvas.draw()
-            plt.show(block=False)
-            plt.pause(0.001)
+        if not (epoch>0 and epoch%self.output_every==0):
+            return
+        self.ax.set_xlim(1,epoch+1)
+        self.ax.set_ylim((0.9*np.min(train_losses), 1.1*np.max(train_losses)))
+        self.p1.set_xdata(range(epoch + 1))
+        self.p1.set_ydata(train_losses)
+        if epoch>2*window+1:
+            x = np.arange(window-1, epoch + 1 - window)
+            y = np.convolve(train_losses, np.ones(2 * window) / (2 * window), mode='valid')
+            self.s1.set_xdata(range(window-1, epoch + 1 - window))
+            self.s1.set_ydata(np.convolve(train_losses, np.ones(2 * window) / (2 * window), mode='valid'))
+        self.fig.canvas.draw()
+        plt.show(block=False)
+        plt.pause(0.001)
 
-    def plot_spectra(self, n_bvals, spectrum_batch, target_batch):
+    def plot_spectra(self, epoch, n_bvals, spectrum_batch, target_batch, model_output):
         if not self.plot_spectra_during_train:
+            return
+        if not (epoch>0 and epoch%self.output_every==0):
             return
         cmap = plt.get_cmap('winter', n_bvals)
         S = spectrum_batch[0][0].detach().cpu()
         N = target_batch[0][0].detach().cpu()
+        O = model_output[0][0].detach().cpu()
         self.ax2[0].cla()
         self.ax2[1].cla()
         for b in range(n_bvals):
             self.ax2[0].plot(S[:, b], linewidth=0.5, color=cmap(b))
             self.ax2[1].plot(N[:, b], linewidth=0.5, color=cmap(b))
+            self.ax2[2].plot(O[:, b], linewidth=0.5, color=cmap(b))
         self.ax2[0].set_xlim(len(S), 0)
         self.ax2[1].set_xlim(len(N), 0)
+        self.ax2[2].set_xlim(len(O), 0)
         self.fig2.canvas.draw()
         plt.show(block=False)
         plt.pause(0.1)

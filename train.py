@@ -67,7 +67,7 @@ while epoch <= epochs+1:
         pred   = model(noisy_signal_batch)
         target = noisy_signal_batch - lip_batch - noise_batch
         loss  += loss_fn(pred, target)/len(bvals)
-        info_screen.plot_spectra(n_bvals, noisy_signal_batch, target)
+        info_screen.plot_spectra(epoch, n_bvals, noisy_signal_batch, target, pred)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01)

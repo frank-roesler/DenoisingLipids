@@ -217,8 +217,8 @@ def make_batch_diffusion(batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis
                          monotone_diffusion=False, **kwargs_BS):
     """makes batch for diffusion fit. Returns simulated noisy signal and corresponding noise"""
     batch = []
-    noise_std    = kwargs_BS['noiseLvl'][1] * np.random.rand(batch_size)
-    # noise_std    = kwargs_BS['noiseLvl'][0] + (kwargs_BS['noiseLvl'][1] - kwargs_BS['noiseLvl'][0]) * rand(batch_size)
+    # noise_std    = kwargs_BS['noiseLvl'][1] * np.random.rand(batch_size)
+    noise_std    = kwargs_BS['noiseLvl'][0] + (kwargs_BS['noiseLvl'][1] - kwargs_BS['noiseLvl'][0]) * rand(batch_size)
 
     for i in range(batch_size):
         #print( metab_basis )

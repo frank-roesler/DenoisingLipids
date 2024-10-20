@@ -10,7 +10,7 @@ plotSpectraDuringTraining = True
 
 epochs          = 100000
 lr              = 6e-5
-batch_size      = 32    # will be multiplied by n_bvals
+batch_size      = 16    # will be multiplied by n_bvals
 plot_loss_every = 1000    # plot and print info every n epochs
 
 modeldir  = 'trained_models/metab_fit' # save model as

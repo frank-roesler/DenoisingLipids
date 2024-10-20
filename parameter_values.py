@@ -14,7 +14,7 @@ kwargs_BS = {'bw':          bw,
              'gWidth':      (6,9),           # [min,max] [Hz,Hz] Gauss Width (equal for MMBG and Metab, default [1.5 5.0])
              'phaseOffs':   (-20,+20),            # [min,max] [Deg,Deg] phase variation
              'freq_offset': (-2,+2),          # [min,max] [Hz] frequ offset, TODO: this should rather be a global paramter, the same for all metabolites (local frequency offsets, might be included, but should rather be small [-1...+1]Hz)
-             'noiseLvl':    (0.010,0.020)     # relative noise level 0 to 1 (SNR=inf,SNR=0)
+             'noiseLvl':    (0.0,0.020)     # relative noise level 0 to 1 (SNR=inf,SNR=0)
              }
 
 # Mekle, R., Mlynárik, V., Gambarota, G., Hergt, M., Krueger, G., & Gruetter, R. (2009). MR spectroscopy of the human brain with enhanced signal intensity at ultrashort echo times on a clinical platform at 3T and 7T. Magnetic Resonance in Medicine, 61(6), 1279–1285. https://doi.org/10.1002/mrm.21961
