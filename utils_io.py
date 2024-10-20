@@ -47,12 +47,15 @@ class Checkpoint:
             return timer
         best_loss = current_loss
         dataLocal = {'epoch': epoch,
-                'model_state_dict': model,
-                'optimizer_state_dict': optimizer,
                 'losses': losses,
                 'best_loss': best_loss}
         dataOut = dict(self.trainingData)
         dataOut.update(dataLocal)
-        torch.save(dataOut, os.path.join(modeldir, model.name+'.pth'))
+        outDir = os.path.join(modeldir,model.name)
+        if not os.path.exists(outDir):
+            os.makedirs(outDir)
+        torch.save(model, os.path.join(outDir, 'model'+'.pth'))
+        torch.save(optimizer, os.path.join(outDir, 'optimizer'+'.pth'))
+        torch.save(dataOut, os.path.join(outDir, 'params'+'.pth'))
         print('new best loss: ', "{:.3e}".format(best_loss))
         return 0
