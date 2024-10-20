@@ -21,7 +21,7 @@ print('device: ', device)
 # model = UNet(n_classes=2,n_channels=2).to(device)
 model = DiffusionNet_compr(ks1=(15,3), ks2=(16,3), nc=32).to(device)
 
-loss_fn = torch.nn.MSELoss()
+loss_fn = torch.nn.L1Loss()
 optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
 
 timer  = 0       # Number of steps before model can be saved again
