@@ -70,7 +70,7 @@ class InfoScreen:
         print('.........', 'batch size: ', batch_size)
         print('.........', f'Time: {self.t1:.1f}')
 
-    def plot_losses(self, epoch, train_losses, window=100):
+    def plot_losses(self, epoch, train_losses, window=400):
         """plots loss and accuracy curves during training, along with their running means."""
         if not (epoch>0 and epoch%self.output_every==0):
             return
@@ -98,6 +98,7 @@ class InfoScreen:
         O = model_output[0][0].detach().cpu()
         self.ax2[0].cla()
         self.ax2[1].cla()
+        self.ax2[2].cla()
         for b in range(n_bvals):
             self.ax2[0].plot(S[:, b], linewidth=0.5, color=cmap(b))
             self.ax2[1].plot(N[:, b], linewidth=0.5, color=cmap(b))

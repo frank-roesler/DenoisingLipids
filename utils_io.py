@@ -16,7 +16,7 @@ def load_model(path, optimizer, device):
     losses = checkpoint['losses']
     best_loss = checkpoint['best_loss']
     batch_size = checkpoint['batch_size']
-    current_loss = np.mean(losses[-100:])
+    current_loss = np.mean(losses[-200:])
     return model, losses, epoch, current_loss, best_loss, batch_size
 
 

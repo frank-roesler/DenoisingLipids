@@ -76,7 +76,7 @@ while epoch <= epochs+1:
     info_screen.print_info(losses, optimizer, epoch, epochs, model, noise_batch.shape[0]*len(bvals))
     info_screen.plot_losses(epoch, losses)
 
-    current_loss = np.mean(losses[-500:])
+    current_loss = np.mean(losses[-400:])
     timer = checkpoint.save(timer, current_loss, epoch, model, optimizer, losses, best_loss)
     timer += 1
     epoch += 1
