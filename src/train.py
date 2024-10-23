@@ -1,17 +1,19 @@
 import torch.optim as optim
 import torch
 import numpy as np
-from utils_info import print_training_data, InfoScreen
-from utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
-from utils_io import Checkpoint, load_model
-from nets import DiffusionNet,UNet,DiffusionNet_compr
-from parameter_values import *
-from config_train import *
+from src.utils.utils_info import print_training_data, InfoScreen
+from src.utils.utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
+from src.utils.utils_io import Checkpoint
+from nets import DiffusionNet_compr
+from src.configs.config_simul import *
+from src.configs.config_train import *
 import matplotlib.pyplot as plt
 
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None
 lip_basis   = Lip_basis(lip_path, kwargs_Lipd ) if includeLip else None
+checkpoint  = Checkpoint()
+
 
 ppmAx, fAx, wCenter, fL = build_ppmAx(bw, noSmp)
 device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -29,22 +31,13 @@ epoch  = 0
 losses = []
 best_loss = torch.Tensor([1e-2]).to(device) # Threshold for saving the model
 if LoadPretrainedModel:
-    print_training_data(modelname)
-    losses, epoch, current_loss, best_loss, batch_size = load_model(modelname, model, optimizer, device)
-
-# ---------------------------------------------------
-# OLD NEEDS TO BE CHANGED!!!
-# checkpoint = torch.load(modelname)
-# #model = UNet(n_classes=2,n_channels=2).to(device)
-# model = DiffusionNet_compr().to(device)
-# optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
-# model.load_state_dict(checkpoint['model_state_dict'])
-# optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-# ---------------------------------------------------
+    model, optimizer = checkpoint.load_pretrained_model(pretrained_path, device)
+    best_loss        = checkpoint.trainingParams['best_loss']
+    epoch            = checkpoint.trainingParams['epoch']
+    losses           = checkpoint.trainingParams['losses'][:-1]
 
 print('training...')
 info_screen = InfoScreen(output_every=plot_loss_every, plot_spectra_during_train=plotSpectraDuringTraining)
-checkpoint  = Checkpoint()
 model.train()
 while epoch <= epochs+1:
     if timer>2000:
@@ -76,7 +69,7 @@ while epoch <= epochs+1:
     info_screen.print_info(losses, optimizer, epoch, epochs, model, noise_batch.shape[0]*len(bvals))
     info_screen.plot_losses(epoch, losses)
 
-    current_loss = np.mean(losses[-400:])
+    current_loss = np.mean(losses[-window_for_current_loss:])
     timer = checkpoint.save(timer, current_loss, epoch, model, optimizer, losses, best_loss)
     timer += 1
     epoch += 1

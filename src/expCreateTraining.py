@@ -1,12 +1,8 @@
-import torch.optim as optim
 import torch
 import numpy as np
-from utils_info import plot_losses, print_info, print_training_data, load_model
-from utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
-from nets import DiffusionNet,UNet,DiffusionNet_compr
-from parameter_values import *
+from src.utils.utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
+from src.configs.config_simul import *
 import matplotlib.pyplot as plt
-from time import time
 
 includeMMBG         = False
 includeLip          = True

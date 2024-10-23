@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from time import time
-
+from src.configs.config_train import *
 
 
 def moving_average(window_size, signal, mode='same'):
@@ -21,7 +21,7 @@ def print_training_data(path, plot_loss=False):
     for key, value in data.items():
         if key not in ('model_state_dict','optimizer_state_dict'):
             if key=='losses':
-                print('final loss: ', "{:.2e}".format(np.mean(value[-400:])))
+                print('final loss: ', "{:.2e}".format(np.mean(value[-window_for_current_loss:])))
             else:
                 print(key, ': ', value)
     if plot_loss:
@@ -70,7 +70,7 @@ class InfoScreen:
         print('.........', 'batch size: ', batch_size)
         print('.........', f'Time: {self.t1:.1f}')
 
-    def plot_losses(self, epoch, train_losses, window=400):
+    def plot_losses(self, epoch, train_losses, window=window_for_current_loss):
         """plots loss and accuracy curves during training, along with their running means."""
         if not (epoch>0 and epoch%self.output_every==0):
             return

@@ -1,29 +1,19 @@
-from parameter_values import *
-from config_train import *
+from src.configs.config_simul import *
+from src.configs.config_train import *
 import torch
-import numpy as np
 import os
+import pathlib
+import platform
 
-
-def load_model(path, optimizer, device):
-    checkpoint = torch.load(path, map_location=device)
-    model = checkpoint['model']
-    try:
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    except:
-        print('State dict did not fit optimizer. Not loaded.')
-    epoch = checkpoint['epoch']
-    losses = checkpoint['losses']
-    best_loss = checkpoint['best_loss']
-    batch_size = checkpoint['batch_size']
-    current_loss = np.mean(losses[-200:])
-    return model, losses, epoch, current_loss, best_loss, batch_size
-
+myPlatform = platform.system()
+if myPlatform == 'Darwin':
+    pathlib.WindowsPath = pathlib.PosixPath
+print(myPlatform)
 
 
 class Checkpoint:
     def __init__(self):
-        self.trainingData = {
+        self.trainingParams = {
             'batch_size': batch_size,
             'learning_rate': lr,
             'includeMMBG': includeMMBG,
@@ -49,7 +39,7 @@ class Checkpoint:
         dataLocal = {'epoch': epoch,
                 'losses': losses,
                 'best_loss': best_loss}
-        dataOut = dict(self.trainingData)
+        dataOut = dict(self.trainingParams)
         dataOut.update(dataLocal)
         outDir = os.path.join(modeldir,model.name)
         if not os.path.exists(outDir):
@@ -59,3 +49,10 @@ class Checkpoint:
         torch.save(dataOut, os.path.join(outDir, 'params'+'.pth'))
         print('new best loss: ', "{:.3e}".format(best_loss))
         return 0
+
+    def load_pretrained_model(self, directory_path, device):
+        model = torch.load(os.path.join(directory_path, 'model.pth'), map_location=device, weights_only=False)
+        optim = torch.load(os.path.join(directory_path, 'optimizer.pth'), map_location=device, weights_only=False)
+        self.trainingParams = torch.load(os.path.join(directory_path, 'params.pth'), weights_only=False)
+
+        return model, optim
