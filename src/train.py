@@ -33,8 +33,8 @@ best_loss = torch.Tensor([1e-2]).to(device) # Threshold for saving the model
 if LoadPretrainedModel:
     model, optimizer = checkpoint.load_pretrained_model(pretrained_path, device)
     best_loss        = checkpoint.trainingParams['best_loss']
-    epoch            = checkpoint.trainingParams['epoch']
-    losses           = checkpoint.trainingParams['losses'][:-1]
+    epoch            = checkpoint.trainingParams['epoch']+1
+    losses           = checkpoint.trainingParams['losses']
 
 print('training...')
 info_screen = InfoScreen(output_every=plot_loss_every, plot_spectra_during_train=plotSpectraDuringTraining)
