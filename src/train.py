@@ -1,7 +1,7 @@
 import torch.optim as optim
 import torch
 import numpy as np
-from src.utils.utils_info import print_training_data, InfoScreen
+from src.utils.utils_info import InfoScreen
 from src.utils.utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
 from src.utils.utils_io import Checkpoint
 from nets import DiffusionNet_compr
@@ -9,12 +9,10 @@ from src.configs.config_simul import *
 from src.configs.config_train import *
 import matplotlib.pyplot as plt
 
-
 metab_basis = Metab_basis(metab_path, kwargs_BS, metab_con, normalize_basis_sets=NormalizeBasisSets)
 mmbg_basis  = MMBG_basis(mmbg_path, kwargs_MM, reduce_small_mm=ReduceSmallMMs) if includeMMBG else None
 lip_basis   = Lip_basis(lip_path, kwargs_Lipd ) if includeLip else None
 checkpoint  = Checkpoint()
-
 
 ppmAx, fAx, wCenter, fL = build_ppmAx(bw, noSmp)
 device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')

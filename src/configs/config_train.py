@@ -12,7 +12,7 @@ plotSpectraDuringTraining = True
 epochs          = 100000
 lr              = 6e-5
 batch_size      = 32    # will be multiplied by n_bvals
-plot_loss_every = 1000    # plot and print info every n epochs
+plot_loss_every = 10    # plot and print info every n epochs
 window_for_current_loss = 400
 
 modeldir        = 'trained_models' # save model as
