@@ -7,3 +7,4 @@ trained_models.nosync/
 *.png
 *.jpg
 __pycache__/*
+venv/

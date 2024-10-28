@@ -39,7 +39,8 @@ print('training...')
 info_screen = InfoScreen(output_every=plot_loss_every, plot_spectra_during_train=plotSpectraDuringTraining)
 model.train()
 
-@torch.compile
+model_opt = torch.compile(model)
+
 def train(model, batch_size, epoch, epochs, timer):
     while epoch <= epochs+1:
         if timer>2000:
@@ -77,7 +78,7 @@ def train(model, batch_size, epoch, epochs, timer):
         epoch += 1
     plt.show()
 
-train(model, batch_size, epoch, epochs, timer)
+train(model_opt, batch_size, epoch, epochs, timer)
 
 
 
