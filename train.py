@@ -49,13 +49,13 @@ checkpoint  = Checkpoint()
 model.train()
 while epoch <= epochs+1:
     if timer>2000:
-        if batch_size==128:
+        if batch_size==64:
             break
         batch_size *= 2
         timer = 100
     loss = torch.zeros(1, device=device)
     for n_bvals in bvals:
-        start = time()
+        #start = time()
         noisy_signal_batch, noise_batch, lip_batch = make_batch_diffusion( batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis,
                                                                            restrict_range=None, #(1500,2500), 
                                                                            #restrict_range=(0,404), 
@@ -63,8 +63,8 @@ while epoch <= epochs+1:
                                                                            include_lip  = includeLip,
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
                                                                            **kwargs_BS)
-        end = time()
-        print(end - start)
+        #end = time()
+        #print(end - start)
         noisy_signal_batch = noisy_signal_batch.to(device)
         noise_batch        = noise_batch.to(device)
         lip_batch          = lip_batch.to(device)
@@ -84,6 +84,5 @@ while epoch <= epochs+1:
     timer = checkpoint.save(timer, current_loss, epoch, model, optimizer, losses, best_loss)
     timer += 1
     epoch += 1
-
 
 plt.show()

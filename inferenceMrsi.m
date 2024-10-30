@@ -3,13 +3,29 @@
 % Denoise DW-MRS
 %
 %%%%%%%%%%%%%%%%%
-clear;
+%clear;
 
-anaMatrixPath = 'f:\cubric_sync\backup_denoising\2023_05_24\mrsDenoisingV02\03_SLOW\mrsiData\mrsiData_Lip.mat';
-dnModelPath   = 'f:\epfl_sync\python\projects\DenoisingLipids\trained_models\DiffusionNet_compr_15x3_16x3_32\model.pth';
+% required only if lcmExp is activated
+try
+    addpath('f:\cubric_sync\#Measurements\###intSrc\hostInitScript\winHost\');
+    oldPath = cd('f:\epfl_sync\##matlab\#mrsiTools\');
+    initMrsiPipeline();
+    cd(oldPath);
+catch
+    warning('Tools from Mrsi Pipeline not available');
+end
 
+anaMatrixPath = 'f:\cubric_sync\backup_denoising\2023_05_24\mrsDenoisingV02\03_SLOW\mrsiData\mrsiData_Lip.mat';             % path to mrsi data
+dnModelPath   = 'f:\epfl_sync\python\projects\DenoisingLipids\trained_models\DiffusionNet_compr_15x3_16x3_32\model.pth';    % path to neural network
+%dnModelPath   = 'f:\epfl_sync\python\projects\DenoisingLipids\trained_models\L1\model.pth';    % path to neural network
+
+% inference settings
 NoiseFit    = true;
 MultiDimFit = true;
+
+% export settings
+lcmExp = true;
+lcmExpPath = 'f:\epfl_sync\##measurments\Geneva\2024_09_06#inVivo_fMRSI\analysis\dnProject\dnDifNetFunnelL2_LS_Noise\';
 
 % Initialize Python interface for denoising
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,6 +52,7 @@ setenv('TCL_LIBRARY', pyTCL);
 setenv('TK_LIBRARY', pyTK);
 setenv('KMP_DUPLICATE_LIB_OK','True');
 
+cd(fileparts(matlab.desktop.editor.getActiveFilename))
 insert(py.sys.path, int64(0), fileparts(matlab.desktop.editor.getActiveFilename));
 
 py.importlib.import_module('scipy');
@@ -61,8 +78,8 @@ model.eval();
 
 load( anaMatrixPath );
 
-idxList = [ [ 5 14]; [ 5+7 14+3] ];    % occipital
-%idxList = [ [ 14 14]; [ 14+7 14+3] ];    % occipital
+%idxList = [ [ 5 14]; [ 5+7 14+3] ];    % occipital
+idxList = [ [ 14 14]; [ 14+7 14+3] ];    % occipital
 
 [X, Y] = meshgrid(idxList(1,1):idxList(2,1),idxList(1,2):idxList(2,2))
 
@@ -71,23 +88,22 @@ indices = sub2ind([32 32], Y, X);
 anaImg = load('f:\cubric_sync\backup_denoising\2023_05_24\mrsDenoisingV02\03_SLOW\mrsiData\anatomImg.mat');
 
 img = anaImg.anatomicImg;
-img(indices(:)) = NaN;
-figure;
-axis square; %hold on;
-h = imagesc( img ); %colormap jet; colorbar; axis square; hold on;
-%set(h, 'AlphaData', double( brainMask ) + double( brainMask ~=1 )*0.8 );
-daspect([1 1 1]);
-
-linIdx = indices(:);
+% img(indices(:)) = NaN;
+% figure;
+% axis square; %hold on;
+% h = imagesc( img ); %colormap jet; colorbar; axis square; hold on;
+% %set(h, 'AlphaData', double( brainMask ) + double( brainMask ~=1 )*0.8 );
+% daspect([1 1 1]);
+% 
+% linIdx = indices(:);
 
 y = [];
-for diffExpItx = 1:length( linIdx )
-    linIdxS = linIdx(diffExpItx);
+for diffExpItx = 1:mrsiData.sz(2)
     try
-        y(:,diffExpItx) = fftshift(ifft(mrsiData.fids(:,linIdxS)',[],2), 2 );
+        y(:,diffExpItx) = fftshift(ifft(mrsiData.fids(:,diffExpItx)',[],2), 2 );
         %y(:,diffExpItx) = conj(y(:,diffExpItx));
     catch
-        y(:,diffExpItx) = fftshift(ifft(mrsiData.fids(:,linIdxS)',[],2), 2 );
+        y(:,diffExpItx) = fftshift(ifft(mrsiData.fids(:,diffExpItx)',[],2), 2 );
         %y(:,diffExpItx) = conj(y(:,diffExpItx));
     end
         
@@ -98,31 +114,39 @@ for diffExpItx = 1:length( linIdx )
     end
 end
 
-y_py = py.numpy.reshape(y_py, [int64(length( linIdx )), size(y,1)] );
-
-figure
-plot( double( py.array.array('d',py.numpy.nditer(y_py.T.real)) ) );
+y_py = py.numpy.reshape(y_py, [int64(mrsiData.sz(2)), size(y,1)] );
 
 y_dn_cplx = py.utils_infer.denoise_signal( y_py.T, model, pyargs('diffusion', MultiDimFit, 'noise_fit', NoiseFit, 'device', device ) )
 
-figure
-plot( real( double( y_dn_cplx ) ) );
+mrsiDataDn = mrsiData;  % store denoised data in fid-a structure
+mrsiDataDn.fids  = conj(fft(fftshift( double(y_dn_cplx),1),[],1));
+mrsiDataDn.specs = fftshift(ifft(mrsiDataDn.fids, [],1), 1 );
 
-spec = double( y_dn_cplx );%double( py.array.array('d',py.numpy.nditer(y_dn_cplx.real)) ) + i*double( py.array.array('d',py.numpy.nditer(y_dn_cplx.imag)) );
+paraPltMrsi = [];
+paraPltMrsi.scl = 'off';
+specPos = [14 14-8];
+op_plotspec_mrsi( { ...
+                    mrsiData ...
+                    mrsiDataDn ...
+                  }, ...
+                   [1.4 4.1], specPos, 6, img, 'real', paraPltMrsi);
 
-%spec = reshape(spec, [size(y,1), int64(length( linIdx ))] );
+% export data for lcmodel fitting
+lcMout = mrsiDataDn;
 
-figure;
-%hold on;
-ax1 = subplot(2,1,1);
-plot(fliplr(mrsiData.ppm), real( y(:,:) ) );
-axHdl = gca;
-axHdl.XDir = 'reverse';
-ax2 = subplot(2,1,2);
-plot(fliplr(mrsiData.ppm), real( spec(:,:) ));
-linkaxes([ax1,ax2],'x');
-axHdl = gca;
-axHdl.XDir = 'reverse';
-xlim([0.5 4.3]);
-%plot( flip(real( getfield( op_averaging( metab ), 'specs') ) ) );
-%hold off;
+lcMout.sz    = size( lcMout.fids );
+lcMout.dims.averages = 2;
+lcMout.dims.subSpecs = 0;
+lcMout.averages    = lcMout.sz(2);
+lcMout.rawAverages = lcMout.sz(2);
+
+lcMoutCsi = lcMout;
+lcMoutCsi.fids  = reshape( lcMout.fids, prod( size(lcMout.fids) ), 1 );
+lcMoutCsi.specs = reshape( lcMout.fids, prod( size(lcMout.specs) ), 1 );
+lcMoutCsi.sz    = size( lcMoutCsi.fids );
+lcMoutCsi.dims.averages = 1;
+lcMoutCsi.dims.subSpecs = 0;
+lcMoutCsi.averages    = 1;
+lcMoutCsi.rawAverages = 1;
+
+io_writelcm_ad( lcMoutCsi, [lcmExpPath filesep 'full_csi.raw'], 68 );

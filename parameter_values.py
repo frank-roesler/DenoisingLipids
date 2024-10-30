@@ -20,15 +20,15 @@ kwargs_BS = {'bw':          bw,
              }
 
 # Mekle, R., Mlynárik, V., Gambarota, G., Hergt, M., Krueger, G., & Gruetter, R. (2009). MR spectroscopy of the human brain with enhanced signal intensity at ultrashort echo times on a clinical platform at 3T and 7T. Magnetic Resonance in Medicine, 61(6), 1279–1285. https://doi.org/10.1002/mrm.21961
-metab_con = { 'Asc':  (0.1 , 0.1),
-              'Asp':  (2.9 , 0.5),
-              'Cr':   (5.0 , 0.3),
-              'GABA': (1.3 , 0.2),
+metab_con = { 'Asc':  (0.1 , 0.1), #
+              'Asp':  (2.9 , 0.5), #
+              'Cr':   (5.0 , 0.3), #
+              'GABA': (1.3 , 0.2), #
               'Gln':  (2.2 , 0.4),
               'Glu':  (9.9 , 0.9),
               'Gly':  (0.3 , 0.2),
-              'GPC':  (0.8 , 0.1),
-              'GSH':  (1.3 , 0.2),
+              'GPC':  (0.8 , 0.1), #
+              'GSH':  (1.3 , 0.2), #
               'Lac':  (0.7 , 0.1),
               'mI':   (5.7 , 0.5),
               'NAA':  (11.8, 0.2),

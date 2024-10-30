@@ -1,6 +1,6 @@
 includeMMBG         = False
 includeLip          = True
-LoadPretrainedModel = False
+LoadPretrainedModel = False  # TODO: it seems that load pretrained model is not working atm
 Monotonicity        = False
 NormalizeBasisSets  = False  # normalizes all basis sets so that highest peak is 1. LEAVE THIS AT FALSE!!!
 ReduceSmallMMs      = False  # Removes MMs with small amplitude to speed up training
@@ -9,7 +9,7 @@ plotSpectraDuringTraining = False
 
 epochs          = 100000
 lr              = 6e-5
-batch_size      = 32    # will be multiplied by n_bvals
+batch_size      = 64    # will be multiplied by n_bvals
 plot_loss_every = 1000    # plot and print info every n epochs
 
 modeldir  = 'trained_models/' # save model as
