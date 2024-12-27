@@ -41,17 +41,17 @@ def metabFunc_vec(para, tAx, y_metab):
     #print( y_metab.shape[1] )
     n_metabs = y_metab.shape[1]
 
-    amplitudes = np.zeros(n_metabs)
-    #print(n_metabs)
-    n_nonzero = np.random.randint(1, n_metabs+1)
-    nonzero_amplitudes = np.random.choice(np.arange(n_metabs), n_nonzero)
-    amplitudes[nonzero_amplitudes] = np.random.rand(n_nonzero)
-    amplitudes=np.ones(n_metabs)
+    # amplitudes = np.zeros(n_metabs)
+    # n_nonzero = np.random.randint(1, n_metabs+1)
+    # nonzero_amplitudes = np.random.choice(np.arange(n_metabs), n_nonzero)
+    # amplitudes[nonzero_amplitudes] = np.random.rand(n_nonzero)
+    amplitudes = np.random.rand(n_metabs)
+    # amplitudes=np.ones(n_metabs)
 
     constL     = np.pi
     constG     = 2 * np.pi / np.sqrt(16 * np.log(2))
 
-    fid        = amplitudes * y_metab * para['ampl_fluc']
+    fid        = amplitudes * y_metab * 10 # * para['ampl_fluc']
 
     phase      = np.exp( 1j*np.deg2rad(para['phaseOffs']))
     freq_shift = np.exp(-1j*np.deg2rad(para['freq_offset']*360)*tAx[:,np.newaxis])
@@ -62,8 +62,9 @@ class Metab_basis:
     def __init__(self, path, kwargs_BS, metab_con, normalize_basis_sets=False):
         #print(path)
         #print(glob(path+'/*.mat'))
-        metab_con_s = dict(sorted(metab_con.items(), key=lambda item: item[1]))
-        self.maxMetabCon = (metab_con_s[list(metab_con_s)[-1]])[0]
+        if metab_con:
+            metab_con_s = dict(sorted(metab_con.items(), key=lambda item: item[1]))
+            self.maxMetabCon = (metab_con_s[list(metab_con_s)[-1]])[0]
 
         self.kwargs      = kwargs_BS
         self.metab_paths = sorted(path.glob('*.mat'), key = lambda s: s.as_posix().casefold())
@@ -162,7 +163,7 @@ def simulate_diffusion(n_bvals, metab_basis, mmbg_basis, lip_basis,
     para['gauss_width']   = metab_basis.kwargs['gWidth'][0]      + (metab_basis.kwargs['gWidth'][1]      - metab_basis.kwargs['gWidth'][0])      * rand()           # global parameter (for all resonances)
     para['freq_offset']   = metab_basis.kwargs['freq_offset'][0] + (metab_basis.kwargs['freq_offset'][1] - metab_basis.kwargs['freq_offset'][0]) * rand(n_metabs)   # local parameter  (for single resonances)
     para['lorentz_width'] = metab_basis.kwargs['lWidth'][0]      + (metab_basis.kwargs['lWidth'][1]      - metab_basis.kwargs['lWidth'][0])      * rand(n_metabs)   # local parameter  (for single resonances)
-    para['ampl_fluc']     = metab_basis.metab_sd.squeeze()       *                                                                                 (rand(n_metabs)-0.5)+1   # local parameter  (for single resonances)
+    para['ampl_fluc']     = metab_basis.metab_sd.squeeze()       *  (rand(n_metabs)-0.5)+1   # local parameter  (for single resonances)
     if metab_basis.kwargs['phaseOffs'] != (0,0):
         para['phaseOffs'] = metab_basis.kwargs['phaseOffs'][0]   + (metab_basis.kwargs['phaseOffs'][1]   - metab_basis.kwargs['phaseOffs'][0])   * rand() + metab_basis.kwargs['bsPhase']   # global parameter (for all resonances)
     else:
@@ -265,8 +266,7 @@ def make_batch_diffusion(batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis
     else:
         lipOut = torch.Tensor([0])
 
-    # TODO: we have to return the pure lipid signals as well for training lipid removal
-    return signal_batch.detach(), noise_batch.detach(), lipOut
+    return signal_batch.detach().squeeze(), noise_batch.detach().squeeze(), lipOut.detach().squeeze()
 
 
 def add_lip(y, lip_basis, metab_basis_settings, globPara):

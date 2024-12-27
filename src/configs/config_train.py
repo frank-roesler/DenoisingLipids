@@ -11,11 +11,11 @@ plotSpectraDuringTraining = True
 
 epochs          = 100000
 lr              = 6e-5
-batch_size      = 32    # will be multiplied by n_bvals
+batch_size      = 64    # will be multiplied by n_bvals
 plot_loss_every = 1000    # plot and print info every n epochs
 window_for_current_loss = 400
 
-modeldir        = 'trained_models' # save model as
-pretrained_path = os.path.join(modeldir, 'DiffusionNet_compr_15x3_16x3_32') # load this model
+modeldir        = 'trained_models/L2' # save model in
+pretrained_path = os.path.join(modeldir, 'Unet021124') # load this model
 
-bvals = range(32,32+1)
+bvals = range(1,1+1)

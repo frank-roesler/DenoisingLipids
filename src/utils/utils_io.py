@@ -31,10 +31,10 @@ class Checkpoint:
             'kwargs_Lipd': kwargs_Lipd}
 
     def save(self, timer, current_loss, epoch, model, optimizer, losses, best_loss):
-        if timer<100:
-            return timer
+        if timer<200:
+            return timer, best_loss
         if current_loss > best_loss:
-            return timer
+            return timer, best_loss
         best_loss = current_loss
         dataLocal = {'epoch': epoch,
                 'losses': losses,
@@ -48,7 +48,7 @@ class Checkpoint:
         torch.save(optimizer, os.path.join(outDir, 'optimizer'+'.pth'))
         torch.save(dataOut, os.path.join(outDir, 'params'+'.pth'))
         print('new best loss: ', "{:.3e}".format(best_loss))
-        return 0
+        return 0, best_loss
 
     def load_pretrained_model(self, directory_path, device):
         model = torch.load(os.path.join(directory_path, 'model.pth'), map_location=device, weights_only=False)

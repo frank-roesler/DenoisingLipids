@@ -1,10 +1,10 @@
 import torch.optim as optim
 import torch
 import numpy as np
-from src.utils.utils_info import print_training_data, InfoScreen
+from src.utils.utils_info import InfoScreen
 from src.utils.utils_simul import make_batch_diffusion, MMBG_basis, Metab_basis, Lip_basis, build_ppmAx
 from src.utils.utils_io import Checkpoint
-from nets import DiffusionNet_compr
+from src.nets.nets1d import UNet
 from src.configs.config_simul import *
 from src.configs.config_train import *
 import matplotlib.pyplot as plt
@@ -20,21 +20,21 @@ device = torch.device('mps') if torch.backends.mps.is_available() else torch.dev
 print('device: ', device)
 
 # model = DiffusionNet(ks=(35,3), nc=64).to(device)
-# model = UNet(n_classes=2,n_channels=2).to(device)
-model = DiffusionNet_compr(ks1=(15,3), ks2=(16,3), nc=32).to(device)
-
-loss_fn = torch.nn.L1Loss()
-optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
+# model = DiffusionNet_compr(ks1=(15,3), ks2=(16,3), nc=32).to(device)
 
 timer  = 0       # Number of steps before model can be saved again
 epoch  = 0
 losses = []
+loss_fn = torch.nn.L1Loss()
 best_loss = torch.Tensor([1e-2]).to(device) # Threshold for saving the model
 if LoadPretrainedModel:
     model, optimizer = checkpoint.load_pretrained_model(pretrained_path, device)
     best_loss        = checkpoint.trainingParams['best_loss']
-    epoch            = checkpoint.trainingParams['epoch']+1
+    epoch            = checkpoint.trainingParams['epoch']
     losses           = checkpoint.trainingParams['losses']
+else:
+    model     = UNet(n_classes=2,n_channels=2).to(device)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, amsgrad=True)
 
 print('training...')
 info_screen = InfoScreen(output_every=plot_loss_every, plot_spectra_during_train=plotSpectraDuringTraining)
@@ -49,7 +49,6 @@ while epoch <= epochs+1:
     for n_bvals in bvals:
         noisy_signal_batch, noise_batch, lip_batch = make_batch_diffusion( batch_size, n_bvals, metab_basis, mmbg_basis, lip_basis,
                                                                            restrict_range=None, #(1500,2500), 
-                                                                           #restrict_range=(0,404), 
                                                                            include_mmbg = includeMMBG,
                                                                            include_lip  = includeLip,
                                                                            normalization='max_1', monotone_diffusion=Monotonicity,
@@ -58,7 +57,7 @@ while epoch <= epochs+1:
         noise_batch        = noise_batch.to(device)
         lip_batch          = lip_batch.to(device)
         pred   = model(noisy_signal_batch)
-        target = noisy_signal_batch - lip_batch - noise_batch
+        target =  lip_batch + noise_batch
         loss  += loss_fn(pred, target)/len(bvals)
         info_screen.plot_spectra(epoch, n_bvals, noisy_signal_batch, target, pred)
     optimizer.zero_grad(set_to_none=True)
@@ -70,9 +69,6 @@ while epoch <= epochs+1:
     info_screen.plot_losses(epoch, losses)
 
     current_loss = np.mean(losses[-window_for_current_loss:])
-    timer = checkpoint.save(timer, current_loss, epoch, model, optimizer, losses, best_loss)
     timer += 1
     epoch += 1
-
-
-plt.show()
+    timer, best_loss = checkpoint.save(timer, current_loss, epoch, model, optimizer, losses, best_loss)

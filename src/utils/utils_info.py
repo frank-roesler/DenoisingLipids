@@ -53,7 +53,7 @@ class InfoScreen:
         self.ax.legend()
         self.ax.set_title('Loss')
         if self.plot_spectra_during_train:
-            self.fig2, self.ax2 = plt.subplots(3,1,figsize=(14,6), constrained_layout=True)
+            self.fig2, self.ax2 = plt.subplots(4,1,figsize=(10,7), constrained_layout=True)
 
     def print_info(self, losses, optimizer, epoch, epochs, model, batch_size):
         if epoch%self.output_every!=0:
@@ -93,21 +93,27 @@ class InfoScreen:
         if not (epoch>0 and epoch%self.output_every==0):
             return
         cmap = plt.get_cmap('winter', n_bvals)
-        S = spectrum_batch[0][0].detach().cpu()
-        N = target_batch[0][0].detach().cpu()
-        O = model_output[0][0].detach().cpu()
-        self.ax2[0].cla()
-        self.ax2[1].cla()
-        self.ax2[2].cla()
-        for b in range(n_bvals):
-            self.ax2[0].plot(S[:, b], linewidth=0.5, color=cmap(b))
-            self.ax2[1].plot(N[:, b], linewidth=0.5, color=cmap(b))
-            self.ax2[2].plot(O[:, b], linewidth=0.5, color=cmap(b))
-        self.ax2[0].set_xlim(len(S), 0)
-        self.ax2[1].set_xlim(len(N), 0)
-        self.ax2[2].set_xlim(len(O), 0)
-        self.fig2.canvas.draw()
-        plt.show(block=False)
-        plt.pause(0.1)
-        # fig.savefig('lipids{}{}'.format(epoch,n_bvals), dpi=256)
+        for idx in range(1):
+            S = spectrum_batch[idx][0].detach().cpu()
+            N = target_batch[idx][0].detach().cpu()
+            O = model_output[idx][0].detach().cpu()
+            E = N-O
+            self.ax2[0].cla()
+            self.ax2[1].cla()
+            self.ax2[2].cla()
+            self.ax2[3].cla()
+            for b in range(n_bvals):
+                self.ax2[0].plot(S, linewidth=0.5, color='blue')
+                self.ax2[1].plot(N, linewidth=0.5, color='blue')
+                self.ax2[2].plot(O, linewidth=0.5, color='blue')
+                self.ax2[3].plot(E, linewidth=0.5, color='blue')
+            self.ax2[0].set_xlim(len(S), 0)
+            self.ax2[1].set_xlim(len(N), 0)
+            self.ax2[2].set_xlim(len(O), 0)
+            self.ax2[3].set_xlim(len(E), 0)
+            self.ax2[3].set_ylim(-0.1,0.1)
+            self.fig2.canvas.draw()
+            plt.show(block=False)
+            plt.pause(0.001)
+            # self.fig2.savefig('train_imgs/lipids{}{}{}'.format(epoch,n_bvals,idx), dpi=256)
 
